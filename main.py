@@ -22,6 +22,24 @@ class ResistorNetwork():
             plt.show()
         return c_image
 
+    def calculate_conductivity(gate_v):
+        e = 1.60217663e-19  # Coloumb
+        epsilon_0 = 8.8541878128e-12  # F/m
+        n_0 = 1e17  # Found on google... - Unit: m^-2
+
+        d = 1e-7  # Parameter, but 100nm is not a bad start - Unit: m
+        epsilon_r = 4  # Parameter, but 4 is not a bad start - no unit
+        mu = 1  # Parameter, but 1 is not a bad start, Unit: m**2/(v * s)
+
+        n_vg = gate_v * epsilon_0 * epsilon_r / (d * e)
+        # TODO! Read the doping map!!!
+        n_doping = 0  # This is a map ranging from -1e17 to 1e17.
+        n_exp = n_vg + n_doping
+    
+        n = (n_0**2 + n_exp**2) ** 0.5
+        sigma = n * e * mu
+        return sigma
+
     def calculate_elements(self, conductivities):
         c_matrix = np.zeros(
             shape=(self.size**2, self.size**2),
@@ -135,14 +153,16 @@ class ResistorNetwork():
 
         # c_matrix = scipy.sparse.csr_matrix(c_matrix)
         # v = scipy.sparse.linalg.spsolve(c_matrix, I)
-
-
         self.v_dist = v.reshape(self.size, self.size)
 
-import scipy
-RN = ResistorNetwork(80)
-t = time.time()
-RN.calculate_voltage_distribution('conductor2.png')
-print('Run-time: {:.3f}ms'.format((time.time() - t) * 1000))
-RN.color_map()
-RN.plot_surface()
+# import scipy
+# RN = ResistorNetwork(80)
+# t = time.time()
+# RN.calculate_voltage_distribution('conductor2.png')
+# print('Run-time: {:.3f}ms'.format((time.time() - t) * 1000))
+# RN.color_map()
+# RN.plot_surface()
+
+
+
+print(calculate_conductivity(1))
