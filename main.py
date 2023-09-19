@@ -56,7 +56,6 @@ class ResistorNetwork():
         # plt.imshow(c_matrix)
         # plt.colorbar()
         # plt.show()
-
         return c_matrix
 
     def create_conductivities_from_image(self, filename):
@@ -64,9 +63,6 @@ class ResistorNetwork():
         Fill up conductivity matrix from supplied image
         """
         c_image = self._load_image(filename)
-        # m_size = c_image.shape[0]
-        # print(m_size)
-        # 1/0
         conductivities = {}
         for i in range(1, self.size**2 + 1):
             row = 1 + (i - 1) // self.size
@@ -78,30 +74,26 @@ class ResistorNetwork():
             # Left of current element
             if col > 1:  # First column has no element to the left
                 x = i - 1
-                y = i
-                conductivities[(x, y)] = conductivity
-                conductivities[(y, x)] = conductivity
+                conductivities[(x, i)] = conductivity
+                conductivities[(i, x)] = conductivity
 
             # Right of current element
             if col < self.size:  # Last column has no element to the right
                 x = i + 1
-                y = i
-                conductivities[(x, y)] = conductivity
-                conductivities[(y, x)] = conductivity
+                conductivities[(x, i)] = conductivity
+                conductivities[(i, x)] = conductivity
 
             # Upwards of current element
             if row > 1:  # First row has no element above
                 x = i - self.size
-                y = i
-                conductivities[(x, y)] = conductivity
-                conductivities[(y, x)] = conductivity
+                conductivities[(x, i)] = conductivity
+                conductivities[(i, x)] = conductivity
 
-            # Downwards of current element
+             # Downwards of current element
             if row < self.size:  # Last row has no element below
                 x = i + self.size
-                y = i
-                conductivities[(x, y)] = conductivity
-                conductivities[(y, x)] = conductivity
+                conductivities[(x, i)] = conductivity
+                conductivities[(i, x)] = conductivity
         return conductivities
 
     def color_map(self):
@@ -125,15 +117,15 @@ class ResistorNetwork():
         plt.show()
 
     def calculate_voltage_distribution(self, image):
-        image = 'conductor2.png'
-        conductivities = RN.create_conductivities_from_image(image)
+        conductivities = self.create_conductivities_from_image(image)
         # In this example current is sourced in upper left corner and
         # drained in lower right corner
         I = np.zeros(shape=(self.size**2, 1), dtype=np.float32)
         I[0] = 0.01
         I[-1] = -0.01
 
-        c_matrix = RN.calculate_elements(conductivities)
+        c_matrix = self.calculate_elements(conductivities)
+
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
         v = np.linalg.solve(c_matrix, I)
@@ -141,10 +133,14 @@ class ResistorNetwork():
         # c_inv = np.linalg.inv(c_matrix)
         # v = np.matmul(c_inv, I)
 
+        # c_matrix = scipy.sparse.csr_matrix(c_matrix)
+        # v = scipy.sparse.linalg.spsolve(c_matrix, I)
+
+
         self.v_dist = v.reshape(self.size, self.size)
 
-
-RN = ResistorNetwork(50)
+import scipy
+RN = ResistorNetwork(80)
 t = time.time()
 RN.calculate_voltage_distribution('conductor2.png')
 print('Run-time: {:.3f}ms'.format((time.time() - t) * 1000))
