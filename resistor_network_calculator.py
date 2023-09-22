@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class ResistorNetworkCalculator():
     def __init__(self, size=10):
-        np.set_printoptions(precision=2, suppress=True, linewidth=170)
+        np.set_printoptions(precision=3, suppress=True, linewidth=170)
         self.dtype = np.float32  # or float64
 
         self.size = size
@@ -62,6 +62,9 @@ class ResistorNetworkCalculator():
         """
         metal_img = self._load_image(filename, 'red')
         self.metal_map = metal_img > 100
+        plt.imshow(self.metal_map)
+        plt.colorbar()
+        plt.show()
         graphene_img = self._load_image(filename, 'green')
         self.graphene_map = graphene_img > 100
 
@@ -100,12 +103,9 @@ class ResistorNetworkCalculator():
             shape=(self.size**2, self.size**2),
             dtype=self.dtype
         )
-
         rows = int(c_matrix.shape[0]**0.5)
         for i in range(1, c_matrix.shape[0] + 1):
             element = 0
-            # row = 1 + (i - 1) // rows
-            # col = 1 + (i - 1) % rows
 
             e1 = (i, i - rows)
             e2 = (i, i - 1)
@@ -131,6 +131,41 @@ class ResistorNetworkCalculator():
         # plt.show()
         return c_matrix
 
+    def calculate_elements_2(self, conductivities):
+        """
+        Fill up the sparse NxN matrix
+        """
+        c_matrix = np.zeros(
+            shape=(self.size**2, self.size**2),
+            dtype=self.dtype
+        )
+
+        rows = int(c_matrix.shape[0]**0.5)
+        for i in range(0, c_matrix.shape[0]):
+            element = 0
+            row = i // self.size
+            col = i % self.size
+            g_matrix = self.g_matrix.reshape(self.size, self.size)
+            e1 = (i, i - rows)
+            e2 = (i, i - 1)
+            e3 = (i, i + 1)
+            e4 = (i, i + rows)
+            if row > 0:
+                c_matrix[e1[0], e1[1]] = g_matrix[row - 1][col]
+                element += g_matrix[row - 1][col]
+            if col > 0:
+                c_matrix[e2[0], e2[1]] = g_matrix[row][col - 1]
+                element += g_matrix[row][col - 1]
+            if col < self.size - 1:
+                c_matrix[e3[0], e3[1]] = g_matrix[row][col + 1]
+                element += g_matrix[row][col + 1]
+            if row < self.size - 1:
+                c_matrix[e4[0], e4[1]] = g_matrix[row + 1][col]
+                element += g_matrix[row + 1][col]
+            # Diagonal element
+            c_matrix[i, i] = element * -1
+        return c_matrix
+
     def create_conductivities_from_image(self, gate_v=0):
         """
         Fill up conductivity matrix from supplied image
@@ -143,7 +178,6 @@ class ResistorNetworkCalculator():
             row = 1 + (i - 1) // self.size
             col = 1 + (i - 1) % self.size
 
-            # conductivity = c_image[row - 1][col - 1] / 255.0 + 1e-5
             conductivity = self.calculate_conductivity(row, col, gate_v)
             # print(i, 'Row: ', row, 'Col: ', col, 'G: ', conductivity)
             g_matrix[i - 1] = conductivity
@@ -184,9 +218,14 @@ class ResistorNetworkCalculator():
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         I[0] = 0.01
         I[-1] = -0.01
-
+        print(conductivities)
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
+        c_matrix2 = self.calculate_elements_2(conductivities)
+
+        # print('Compare the two matrices')
+        # print(c_matrix - c_matrix2)
+        # print(np.isclose(c_matrix, c_matrix2))
         print('Calculate elements: ', time.time() - t)
 
         # Peter's slides mentions finding the inverse and multiply, but
@@ -206,3 +245,25 @@ class ResistorNetworkCalculator():
         print(time.time() - t)
         self.v_dist = v.reshape(self.size, self.size)
         print(time.time() - t)
+
+
+        c_matrix2 = sp.sparse.csr_matrix(c_matrix2)
+        print('Convert to sparse: ', time.time() - t)
+        t = time.time()
+        v = sp.sparse.linalg.spsolve(c_matrix2, I)
+        print(time.time() - t)
+        v_dist2 = v.reshape(self.size, self.size)
+        print(time.time() - t)
+
+        plt.imshow(self.v_dist)
+        plt.colorbar()
+        plt.show()
+
+        plt.imshow(v_dist2)
+        plt.colorbar()
+        plt.show()
+
+
+        plt.imshow(self.v_dist - v_dist2)
+        plt.colorbar()
+        plt.show()

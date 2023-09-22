@@ -53,8 +53,8 @@ class RNVisualizer():
 
 
 def main():
-    rnv = RNVisualizer(50)
-    rnv.color_map()
+    rnv = RNVisualizer(5)
+    # rnv.color_map()
     # g_matrix = RN.color_map()
     # print(g_matrix)
     # fig, ax = plt.subplots(1, 1)
