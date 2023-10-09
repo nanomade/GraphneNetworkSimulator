@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colors
 
 from resistor_network_calculator import ResistorNetworkCalculator
 
@@ -11,29 +12,54 @@ class RNVisualizer():
         self.rnc.load_doping_map('doping.png')
         self.rnc.load_material_maps('conductor2.png')
         # Todo: At some point we should also load a mobility map
-        self.rnc.calculate_voltage_distribution(gate_v=25)
 
     def color_map(self):
         if self.rnc.v_dist is None:
             print('Voltage map has not been calculated')
             return
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
-        # float32 is always enough for plotting
-        v_map = np.zeros(
-            shape=(self.size, self.size),
-            dtype=np.float32
-        )
-        for i in range(1, self.size):
-            for j in range(1, self.size):
-                v_map[i][j] = self.rnc.v_dist[i - 1][j - 1] - self.rnc.v_dist[i][j]
+        # Consider to make the figure global to allow for animations
+        fig = plt.figure()  # Figsize...
 
-        g_matrix = self.rnc.g_matrix.reshape(self.size, self.size)
-        # im = plt.imshow(g_matrix)
+        ax = fig.add_subplot(2, 3, 1)
+        ax.text(0.05, 1.10, 'Doping', transform=ax.transAxes,
+                fontsize=14, verticalalignment='top', bbox=props)
+        # plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
+        plt.imshow(self.rnc.doping_map)
+
+        ax = fig.add_subplot(2, 3, 2)
+        ax.text(0.05, 1.10, 'Contacts', transform=ax.transAxes,
+                fontsize=14, verticalalignment='top', bbox=props)
+        plt.imshow(self.rnc.metal_map)
+
+        ax = fig.add_subplot(2, 3, 3)
+        ax.text(0.05, 1.10, 'Graphene', transform=ax.transAxes,
+                fontsize=14, verticalalignment='top', bbox=props)
+        plt.imshow(self.rnc.graphene_map)
+
+        # Conductivity
+        ax = fig.add_subplot(2, 3, 4)
+        ax.text(0.05, 1.10, 'Conductivity', transform=ax.transAxes,
+                fontsize=14, verticalalignment='top', bbox=props)
+        plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
+
+        # Current Density
+        ax = fig.add_subplot(2, 3, 5)
+        ax.text(0.05, 1.10, 'Current Density (log scale)', transform=ax.transAxes,
+                fontsize=14, verticalalignment='top', bbox=props)
+        current_density = self.rnc.calculate_current_density()
+        plt.imshow(current_density, norm=colors.LogNorm())
+
+        # Potential
+        ax = fig.add_subplot(2, 3, 6)
+        ax.text(0.05, 1.10, 'Potential', transform=ax.transAxes,
+                fontsize=14, verticalalignment='top', bbox=props)
+        # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
-        # # plt.imshow(v_map)
-        plt.colorbar()
+
+        # plt.colorbar()
         plt.show()
-        return g_matrix
 
     def plot_surface(self):
         if self.rnc.v_dist is None:
@@ -53,23 +79,26 @@ class RNVisualizer():
 
 
 def main():
-    rnv = RNVisualizer(5)
-    # rnv.color_map()
-    # g_matrix = RN.color_map()
-    # print(g_matrix)
-    # fig, ax = plt.subplots(1, 1)
-    # im = ax.imshow(g_matrix)
-    # # plt.colorbar()
-    # # plt.show()
+    # Max with currently available memory is ~200 - this is
+    # limited by the memory required to hold the dense version
+    # of the calculation matrix. It should be possible to improve
+    # this by populating the sparse matrix directly
+    rnv = RNVisualizer(150)
+    rnv.rnc.calculate_voltage_distribution(gate_v=-1)
+    rnv.color_map()
 
-    # for gate_v in range(0, 100):
+    # rnv.rnc.calculate_voltage_distribution(gate_v=0)
+    # fig, ax = plt.subplots(1, 1)
+    # im = ax.imshow(rnv.rnc.v_dist)
+    # plt.colorbar()
+    # plt.show()
+    # for gate_v in range(-50, 50):
     #     print(gate_v)
-    #     RN.calculate_voltage_distribution(gate_v=gate_v)
-    #     g_matrix = RN.color_map()
-    #     im.set_data(g_matrix)
+    #     rnv.rnc.calculate_voltage_distribution(gate_v=gate_v)
+    #     im.set_data(rnv.rnc.v_dist)
     #     fig.canvas.draw_idle()
     #     plt.pause(0.1)
-    #     # RN.plot_surface()
+    # #     # RN.plot_surface()
 
 
 if __name__ == '__main__':
