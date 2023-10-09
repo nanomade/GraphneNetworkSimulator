@@ -62,9 +62,6 @@ class ResistorNetworkCalculator():
         """
         metal_img = self._load_image(filename, 'red')
         self.metal_map = metal_img > 100
-        plt.imshow(self.metal_map)
-        plt.colorbar()
-        plt.show()
         graphene_img = self._load_image(filename, 'green')
         self.graphene_map = graphene_img > 100
 
@@ -95,73 +92,32 @@ class ResistorNetworkCalculator():
             conductivity = self._calculate_graphene_conductivity(row, col, gate_v)
         return conductivity
 
-    def calculate_elements(self, conductivities):
+    def calculate_elements(self):
         """
         Fill up the sparse NxN matrix
         """
+        # TODO: Apparantly scipy has a sparse-type optimized for
+        # diagonal (including diagonals with offsets) matrices
         c_matrix = np.zeros(
             shape=(self.size**2, self.size**2),
             dtype=self.dtype
         )
-        rows = int(c_matrix.shape[0]**0.5)
-        for i in range(1, c_matrix.shape[0] + 1):
-            element = 0
-
-            e1 = (i, i - rows)
-            e2 = (i, i - 1)
-            e3 = (i, i + 1)
-            e4 = (i, i + rows)
-            if e1 in conductivities:
-                c_matrix[e1[0] - 1, e1[1] - 1] = conductivities[e1]
-                element += conductivities[e1]
-            if e2 in conductivities:
-                c_matrix[e2[0] - 1, e2[1] - 1] = conductivities[e2]
-                element += conductivities[e2]
-            if e3 in conductivities:
-                c_matrix[e3[0] - 1, e3[1] - 1] = conductivities[e3]
-                element += conductivities[e3]
-            if e4 in conductivities:
-                c_matrix[e4[0] - 1, e4[1] - 1] = conductivities[e4]
-                element += conductivities[e4]
-            # Diagonal element
-            c_matrix[i - 1, i - 1] = element * -1
-
-        # plt.imshow(c_matrix)
-        # plt.colorbar()
-        # plt.show()
-        return c_matrix
-
-    def calculate_elements_2(self, conductivities):
-        """
-        Fill up the sparse NxN matrix
-        """
-        c_matrix = np.zeros(
-            shape=(self.size**2, self.size**2),
-            dtype=self.dtype
-        )
-
-        rows = int(c_matrix.shape[0]**0.5)
-        for i in range(0, c_matrix.shape[0]):
+        for i in range(0, self.size**2):
             element = 0
             row = i // self.size
             col = i % self.size
-            g_matrix = self.g_matrix.reshape(self.size, self.size)
-            e1 = (i, i - rows)
-            e2 = (i, i - 1)
-            e3 = (i, i + 1)
-            e4 = (i, i + rows)
             if row > 0:
-                c_matrix[e1[0], e1[1]] = g_matrix[row - 1][col]
-                element += g_matrix[row - 1][col]
+                c_matrix[i, i - self.size] = self.g_matrix[i - self.size]
+                element += self.g_matrix[i - self.size]
             if col > 0:
-                c_matrix[e2[0], e2[1]] = g_matrix[row][col - 1]
-                element += g_matrix[row][col - 1]
+                c_matrix[i, i - 1] = self.g_matrix[i - 1]
+                element += self.g_matrix[i - 1]
             if col < self.size - 1:
-                c_matrix[e3[0], e3[1]] = g_matrix[row][col + 1]
-                element += g_matrix[row][col + 1]
+                c_matrix[i, i + 1] = self.g_matrix[i + 1]
+                element += self.g_matrix[i + 1]
             if row < self.size - 1:
-                c_matrix[e4[0], e4[1]] = g_matrix[row + 1][col]
-                element += g_matrix[row + 1][col]
+                c_matrix[i, i + self.size] = self.g_matrix[i + self.size]
+                element += self.g_matrix[i + self.size]
             # Diagonal element
             c_matrix[i, i] = element * -1
         return c_matrix
@@ -170,100 +126,46 @@ class ResistorNetworkCalculator():
         """
         Fill up conductivity matrix from supplied image
         """
-        # c_image = self._load_image(filename)
-        conductivities = {}
         g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
-
         for i in range(1, self.size**2 + 1):
             row = 1 + (i - 1) // self.size
             col = 1 + (i - 1) % self.size
-
             conductivity = self.calculate_conductivity(row, col, gate_v)
-            # print(i, 'Row: ', row, 'Col: ', col, 'G: ', conductivity)
             g_matrix[i - 1] = conductivity
+        return g_matrix
 
-            # Left of current element
-            if col > 1:  # First column has no element to the left
-                x = i - 1
-                conductivities[(x, i)] = conductivity
-                conductivities[(i, x)] = conductivity
-
-            # Right of current element
-            if col < self.size:  # Last column has no element to the right
-                x = i + 1
-                conductivities[(x, i)] = conductivity
-                conductivities[(i, x)] = conductivity
-
-            # Upwards of current element
-            if row > 1:  # First row has no element above
-                x = i - self.size
-                conductivities[(x, i)] = conductivity
-                conductivities[(i, x)] = conductivity
-
-            # Downwards of current element
-            if row < self.size:  # Last row has no element below
-                x = i + self.size
-                conductivities[(x, i)] = conductivity
-                conductivities[(i, x)] = conductivity
-
-        self.g_matrix = g_matrix
-        return conductivities
+    def calculate_current_density(self):
+        if self.v_dist is None:
+            print('Voltage map has not been calculated')
+            return
+        grad = np.gradient(self.v_dist)
+        mag = np.sqrt(grad[0]**2 + grad[1]**2)
+        current_density = mag * self.g_matrix.reshape(self.size, self.size)
+        return current_density
 
     def calculate_voltage_distribution(self, gate_v=0):
         t = time.time()
-        conductivities = self.create_conductivities_from_image(gate_v=gate_v)
+        self.g_matrix = self.create_conductivities_from_image(gate_v=gate_v)
         print('Create conductivities: ', time.time() - t)
+
         # In this example current is sourced in upper left corner and
         # drained in lower right corner
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         I[0] = 0.01
         I[-1] = -0.01
-        print(conductivities)
-        t = time.time()
-        c_matrix = self.calculate_elements(conductivities)
-        c_matrix2 = self.calculate_elements_2(conductivities)
 
-        # print('Compare the two matrices')
-        # print(c_matrix - c_matrix2)
-        # print(np.isclose(c_matrix, c_matrix2))
+        t = time.time()
+        c_matrix = self.calculate_elements()
         print('Calculate elements: ', time.time() - t)
 
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
-        # t = time.time()
-        # v = np.linalg.solve(c_matrix, I)
-        # print(time.time() - t)
-        # Direct implementation from slides for comparison
-        # c_inv = np.linalg.inv(c_matrix)
-        # v = np.matmul(c_inv, I)
-
-        t = time.time()
         c_matrix = sp.sparse.csr_matrix(c_matrix)
         print('Convert to sparse: ', time.time() - t)
         t = time.time()
         v = sp.sparse.linalg.spsolve(c_matrix, I)
-        print(time.time() - t)
+        # Direct implementation from slides for comparison
+        # c_inv = np.linalg.inv(c_matrix)
+        # v = np.matmul(c_inv, I)
+
         self.v_dist = v.reshape(self.size, self.size)
-        print(time.time() - t)
-
-
-        c_matrix2 = sp.sparse.csr_matrix(c_matrix2)
-        print('Convert to sparse: ', time.time() - t)
-        t = time.time()
-        v = sp.sparse.linalg.spsolve(c_matrix2, I)
-        print(time.time() - t)
-        v_dist2 = v.reshape(self.size, self.size)
-        print(time.time() - t)
-
-        plt.imshow(self.v_dist)
-        plt.colorbar()
-        plt.show()
-
-        plt.imshow(v_dist2)
-        plt.colorbar()
-        plt.show()
-
-
-        plt.imshow(self.v_dist - v_dist2)
-        plt.colorbar()
-        plt.show()
