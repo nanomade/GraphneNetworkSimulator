@@ -5,6 +5,25 @@ from matplotlib import colors
 from resistor_network_calculator import ResistorNetworkCalculator
 
 
+"""
+TODO-list
+These are the next items that needs to be implemented, more will be
+added as they show up:
+
+ * Export an animation of the conductivity, current-density and voltage
+   as a function of gate sweep
+ * Take mobiliy as an input map
+ * Take metal and isolator conductivities as parameters rather than
+   hard-coded values
+ * Implement function to plot voltage between any two points as function
+   of gate voltage
+ * Investigate potential significant speedup by populating the sparse
+   matrix directly. Here we should be able to take advantage of the
+   fact that it is a sparse diagonal matrix;
+   https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.diags.html
+ * Make a GUI to operate the program
+"""
+
 class RNVisualizer():
     def __init__(self, size):
         self.size = size
