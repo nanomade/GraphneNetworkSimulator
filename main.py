@@ -1,11 +1,10 @@
-import sys
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
-from resistor_network_calculator_direct import ResistorNetworkCalculator
-
-# from resistor_network_calculator_fast import ResistorNetworkCalculator
+from resistor_network_calculator_direct import DirectResistorNetworkCalculator
+from resistor_network_calculator_fast import FastResistorNetworkCalculator
 
 
 """
@@ -29,9 +28,13 @@ added as they show up:
 
 
 class RNVisualizer:
-    def __init__(self, size):
+    def __init__(self, size: int = 20, model: str = 'fast'):
         self.size = size
-        self.rnc = ResistorNetworkCalculator(size)
+        if model == 'fast':
+            self.rnc = FastResistorNetworkCalculator(size)
+        else:
+            self.rnc = DirectResistorNetworkCalculator(size)
+
         self.rnc.load_doping_map('doping.png')
         self.rnc.load_material_maps('conductor.png')
         # Todo: At some point we should also load a mobility map
@@ -99,16 +102,41 @@ class RNVisualizer:
         plt.show()
 
 
+def parse_args():
+    msg = """
+    For model direct, use size values higher then ~90 with caution.
+    For model direct, max size for 8GB memory is approximately is ~200 - this is
+    limited by the memory required to hold the dense version of the calculation matrix.
+    """
+    # It should be possible to improve this by populating the sparse matrix directly
+
+    parser = argparse.ArgumentParser(prog='main.py', description=msg)
+    parser.add_argument('size', type=int, nargs=1, help='The size of the network')
+    parser.add_argument('--gate_v', type=float, nargs=1, default=0, help='Gate voltage')
+    parser.add_argument(
+        '--model',
+        required=False,
+        nargs=1,
+        choices=['fast', 'direct'],
+        help='Calculation backend (default is fast)',
+    )
+    args = vars(parser.parse_args())
+
+    size = args['size'][0]
+    gate_v = args['gate_v'][0]
+    if args['model'] is None:
+        model = 'fast'
+    else:
+        model = args['model'][0]
+
+    return size, gate_v, model
+
+
 def main():
-    # Max with currently available memory is ~200 - this is
-    # limited by the memory required to hold the dense version
-    # of the calculation matrix. It should be possible to improve
-    # this by populating the sparse matrix directly
+    size, gate_v, model = parse_args()
 
-    size = int(sys.argv[1])
-
-    rnv = RNVisualizer(size)
-    rnv.rnc.calculate_voltage_distribution(gate_v=-1)
+    rnv = RNVisualizer(size=size, model=model)
+    rnv.rnc.calculate_voltage_distribution(gate_v=gate_v)
     rnv.color_map()
 
     # rnv.rnc.calculate_voltage_distribution(gate_v=0)
