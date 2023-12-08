@@ -1,7 +1,3 @@
-# This is a matrix of the conductivities of each cell
-# In this example, the two upper right resistors are more conductive
-# than the rest
-
 def fixed_conductivity_table():
     # A fixed 3x3 array.
     # Upper and lower corner have a higher conductivity, otherwise uniform
@@ -85,6 +81,13 @@ def create_conductivities(m_size):
 
 
 if __name__ == '__main__':
+    msg = """
+    This file contains two conductivity matrixes that can used to test examples of the
+    stringent model of the resistor network as opposed to the square approximation
+    typically used.
+    """
+    print(msg)
+    print()
     print(fixed_conductivity_table())
 
     print()
