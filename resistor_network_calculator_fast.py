@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
-class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
+class FastResistorNetworkCalculator(ResistorNetworkCalculatorBase):
     def __init__(self, size=10):
         super().__init__(size)
 
@@ -49,16 +49,6 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             conductivity = self.calculate_conductivity(row, col, gate_v)
             g_matrix[i - 1] = conductivity
         return g_matrix
-
-    def calculate_current_density(self):
-        # if self.v_dist is None:
-        #     print('Voltage map has not been calculated')
-        #     return
-        # grad = np.gradient(self.v_dist)
-        # mag = np.sqrt(grad[0]**2 + grad[1]**2)
-        # current_density = mag * self.g_matrix.reshape(self.size, self.size)
-        current_density = self._calculate_current_density()
-        return current_density
 
     def calculate_voltage_distribution(self, gate_v=0):
         t = time.time()
