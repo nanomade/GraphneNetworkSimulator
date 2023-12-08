@@ -1,8 +1,11 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
-from resistor_network_calculator import ResistorNetworkCalculator
+from resistor_network_calculator_direct import ResistorNetworkCalculator
+
+# from resistor_network_calculator_fast import ResistorNetworkCalculator
 
 
 """
@@ -24,12 +27,13 @@ added as they show up:
  * Make a GUI to operate the program
 """
 
-class RNVisualizer():
+
+class RNVisualizer:
     def __init__(self, size):
         self.size = size
         self.rnc = ResistorNetworkCalculator(size)
         self.rnc.load_doping_map('doping.png')
-        self.rnc.load_material_maps('conductor2.png')
+        self.rnc.load_material_maps('conductor.png')
         # Todo: At some point we should also load a mobility map
 
     def color_map(self):
@@ -41,39 +45,37 @@ class RNVisualizer():
         # Consider to make the figure global to allow for animations
         fig = plt.figure()  # Figsize...
 
+        # TODO: Show only these if input is from an image
         ax = fig.add_subplot(2, 3, 1)
-        ax.text(0.05, 1.10, 'Doping', transform=ax.transAxes,
-                fontsize=14, verticalalignment='top', bbox=props)
+        params = {'fontsize': 14, 'verticalalignment': 'top', 'bbox': props}
+        ax.text(0.05, 1.10, 'Doping', transform=ax.transAxes, **params)
         # plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
         plt.imshow(self.rnc.doping_map)
 
         ax = fig.add_subplot(2, 3, 2)
-        ax.text(0.05, 1.10, 'Contacts', transform=ax.transAxes,
-                fontsize=14, verticalalignment='top', bbox=props)
+        ax.text(0.05, 1.10, 'Contacts', transform=ax.transAxes, **params)
         plt.imshow(self.rnc.metal_map)
 
         ax = fig.add_subplot(2, 3, 3)
-        ax.text(0.05, 1.10, 'Graphene', transform=ax.transAxes,
-                fontsize=14, verticalalignment='top', bbox=props)
+        ax.text(0.05, 1.10, 'Graphene', transform=ax.transAxes, **params)
         plt.imshow(self.rnc.graphene_map)
 
         # Conductivity
         ax = fig.add_subplot(2, 3, 4)
-        ax.text(0.05, 1.10, 'Conductivity', transform=ax.transAxes,
-                fontsize=14, verticalalignment='top', bbox=props)
+        ax.text(0.05, 1.10, 'Conductivity', transform=ax.transAxes, **params)
         plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
 
         # Current Density
         ax = fig.add_subplot(2, 3, 5)
-        ax.text(0.05, 1.10, 'Current Density (log scale)', transform=ax.transAxes,
-                fontsize=14, verticalalignment='top', bbox=props)
+        ax.text(
+            0.05, 1.10, 'Current Density (log scale)', transform=ax.transAxes, **params
+        )
         current_density = self.rnc.calculate_current_density()
         plt.imshow(current_density, norm=colors.LogNorm())
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
-        ax.text(0.05, 1.10, 'Potential', transform=ax.transAxes,
-                fontsize=14, verticalalignment='top', bbox=props)
+        ax.text(0.05, 1.10, 'Potential', transform=ax.transAxes, **params)
         # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
 
@@ -102,7 +104,10 @@ def main():
     # limited by the memory required to hold the dense version
     # of the calculation matrix. It should be possible to improve
     # this by populating the sparse matrix directly
-    rnv = RNVisualizer(150)
+
+    size = int(sys.argv[1])
+
+    rnv = RNVisualizer(size)
     rnv.rnc.calculate_voltage_distribution(gate_v=-1)
     rnv.color_map()
 
