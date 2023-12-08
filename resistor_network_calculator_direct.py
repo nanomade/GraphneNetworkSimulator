@@ -5,7 +5,7 @@ import scipy as sp
 from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
-class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
+class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
     def __init__(self, size=10):
         super().__init__(size)
 
