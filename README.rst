@@ -75,9 +75,9 @@ You can try out the difference between the two models by testing the models prov
 `example_matrix.py` rather than loading maps from images.
 
 
-##########################
+
 Overview of included files
-##########################
+==========================
 
 This package consists of a number of python files, a short introduction to each file
 is given below. Also, each file can be executed individiually, for files mainly intended
