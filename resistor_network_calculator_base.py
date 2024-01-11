@@ -57,11 +57,6 @@ class ResistorNetworkCalculatorBase:
         """
         metal_img = self._load_image(filename, 'red')
         self.metal_map = metal_img > 100
-
-        # plt.imshow(self.metal_map)
-        # plt.colorbar()
-        # plt.show()
-
         graphene_img = self._load_image(filename, 'green')
         self.graphene_map = graphene_img > 100
 
@@ -138,3 +133,12 @@ class ResistorNetworkCalculatorBase:
 
     def calculate_voltage_distribution(self, gate_v=0):
         raise NotImplementedError
+
+
+if __name__ == "__main__":
+    msg = """
+    Base class for the two calculation models.
+
+    Also contains the converter from a strict network model into the square approximation,
+    example shown below:
+    """
