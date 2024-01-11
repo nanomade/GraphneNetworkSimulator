@@ -13,9 +13,7 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         """
         Fill up conductivity matrix from supplied image
         """
-        # c_image = self._load_image(filename)
         conductivities = {}
-        # g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
 
         for i in range(1, self.size**2 + 1):
             row = 1 + (i - 1) // self.size
@@ -80,6 +78,10 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         return c_matrix
 
     def calculate_voltage_distribution(self, gate_v=0, conductivities=None):
+        """
+        If a conductivity matrix is provided, this will be used rather than the normal
+        beaviour of loading from images.
+        """
         t = time.time()
 
         # Conductivities will be calculated according to the standard rules
