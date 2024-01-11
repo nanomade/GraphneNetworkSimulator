@@ -28,57 +28,64 @@ added as they show up:
 
 
 class RNVisualizer:
-    def __init__(self, size: int = 20, model: str = 'fast'):
+    def __init__(self, size: int = 20, model: str = "fast", skip_images: bool = False):
         self.size = size
-        if model == 'fast':
+        if model == "fast":
             self.rnc = FastResistorNetworkCalculator(size)
         else:
             self.rnc = DirectResistorNetworkCalculator(size)
 
-        self.rnc.load_doping_map('doping.png')
-        self.rnc.load_material_maps('conductor.png')
-        # Todo: At some point we should also load a mobility map
+        if not skip_images:
+            self.rnc.load_doping_map("doping.png")
+            self.rnc.load_material_maps("conductor.png")
+            # Todo: At some point we should also load a mobility map
 
     def color_map(self):
         if self.rnc.v_dist is None:
-            print('Voltage map has not been calculated')
+            print("Voltage map has not been calculated")
             return
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 
+        params = {
+            "fontsize": 14,
+            "verticalalignment": "top",
+            "bbox": {"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
+        }
         # Consider to make the figure global to allow for animations
         fig = plt.figure()  # Figsize...
 
         # TODO: Show only these if input is from an image
-        ax = fig.add_subplot(2, 3, 1)
-        params = {'fontsize': 14, 'verticalalignment': 'top', 'bbox': props}
-        ax.text(0.05, 1.10, 'Doping', transform=ax.transAxes, **params)
-        # plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
-        plt.imshow(self.rnc.doping_map)
+        if self.rnc.doping_map is not None:
+            ax = fig.add_subplot(2, 3, 1)
+            ax.text(0.05, 1.10, "Doping", transform=ax.transAxes, **params)
+            # plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
+            plt.imshow(self.rnc.doping_map)
 
-        ax = fig.add_subplot(2, 3, 2)
-        ax.text(0.05, 1.10, 'Contacts', transform=ax.transAxes, **params)
-        plt.imshow(self.rnc.metal_map)
+        if self.rnc.metal_map is not None:
+            ax = fig.add_subplot(2, 3, 2)
+            ax.text(0.05, 1.10, "Contacts", transform=ax.transAxes, **params)
+            plt.imshow(self.rnc.metal_map)
 
-        ax = fig.add_subplot(2, 3, 3)
-        ax.text(0.05, 1.10, 'Graphene', transform=ax.transAxes, **params)
-        plt.imshow(self.rnc.graphene_map)
+        if self.rnc.graphene_map is not None:
+            ax = fig.add_subplot(2, 3, 3)
+            ax.text(0.05, 1.10, "Graphene", transform=ax.transAxes, **params)
+            plt.imshow(self.rnc.graphene_map)
 
         # Conductivity
         ax = fig.add_subplot(2, 3, 4)
-        ax.text(0.05, 1.10, 'Conductivity', transform=ax.transAxes, **params)
+        ax.text(0.05, 1.10, "Conductivity", transform=ax.transAxes, **params)
         plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
 
         # Current Density
         ax = fig.add_subplot(2, 3, 5)
         ax.text(
-            0.05, 1.10, 'Current Density (log scale)', transform=ax.transAxes, **params
+            0.05, 1.10, "Current Density (log scale)", transform=ax.transAxes, **params
         )
         current_density = self.rnc.calculate_current_density()
         plt.imshow(current_density, norm=colors.LogNorm())
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
-        ax.text(0.05, 1.10, 'Potential', transform=ax.transAxes, **params)
+        ax.text(0.05, 1.10, "Potential", transform=ax.transAxes, **params)
         # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
 
@@ -87,7 +94,7 @@ class RNVisualizer:
 
     def plot_surface(self):
         if self.rnc.v_dist is None:
-            print('Voltage map has not been calculated')
+            print("Voltage map has not been calculated")
             return
         x = np.arange(0, self.size)
         y = np.arange(0, self.size)
@@ -95,8 +102,8 @@ class RNVisualizer:
         # g_matrix = self.g_matrix.reshape(self.size, self.size)
 
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.plot_surface(x, y, self.rnc.v_dist, cmap='gray')
+        ax = fig.add_subplot(111, projection="3d")
+        ax.plot_surface(x, y, self.rnc.v_dist, cmap="gray")
         # ax.plot_surface(x, y, g_matrix, cmap='gray')
         # Show the plot
         plt.show()
@@ -110,33 +117,51 @@ def parse_args():
     """
     # It should be possible to improve this by populating the sparse matrix directly
 
-    parser = argparse.ArgumentParser(prog='main.py', description=msg)
-    parser.add_argument('size', type=int, nargs=1, help='The size of the network')
-    parser.add_argument('--gate_v', type=float, nargs=1, default=0, help='Gate voltage')
+    parser = argparse.ArgumentParser(prog="main.py", description=msg)
+    parser.add_argument("size", type=int, nargs=1, help="The size of the network")
+    parser.add_argument("--hard-code-network", action="store_true")
+    parser.add_argument("--gate_v", type=float, nargs=1, default=0, help="Gate voltage")
     parser.add_argument(
-        '--model',
+        "--model",
         required=False,
         nargs=1,
-        choices=['fast', 'direct'],
-        help='Calculation backend (default is fast)',
+        choices=["fast", "direct"],
+        help="Calculation backend (default is fast)",
     )
     args = vars(parser.parse_args())
 
-    size = args['size'][0]
-    gate_v = args['gate_v'][0]
-    if args['model'] is None:
-        model = 'fast'
+    size = args["size"][0]
+    gate_v = args["gate_v"][0]
+    if args["model"] is None:
+        model = "fast"
     else:
-        model = args['model'][0]
+        model = args["model"][0]
 
-    return size, gate_v, model
+    if args["hard_code_network"]:
+        gate_v = 0
+        model = "direct"
+        print()
+        print("Hardcodet resistor network")
+        print('Images not loaded, gate is ignored, model is "direct"')
+        print(msg)
+        print()
+    return size, gate_v, model, args["hard_code_network"]
 
 
 def main():
-    size, gate_v, model = parse_args()
+    size, gate_v, model, hard_coded_network = parse_args()
+    if hard_coded_network:
+        from example_matrix import fixed_conductivity_table
+        from example_matrix import create_conductivities
 
-    rnv = RNVisualizer(size=size, model=model)
-    rnv.rnc.calculate_voltage_distribution(gate_v=gate_v)
+        # size must be 3 for fixed_conductivity_table()
+        # conductivities = fixed_conductivity_table()
+        # conductivities = create_conductivities(size)
+    else:
+        conductivities = None
+    rnv = RNVisualizer(size=size, model=model, skip_images=hard_coded_network)
+
+    rnv.rnc.calculate_voltage_distribution(gate_v=gate_v, conductivities=conductivities)
     rnv.color_map()
 
     # rnv.rnc.calculate_voltage_distribution(gate_v=0)
@@ -153,5 +178,5 @@ def main():
     # #     # RN.plot_surface()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
