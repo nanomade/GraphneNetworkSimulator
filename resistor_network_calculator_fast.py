@@ -50,7 +50,10 @@ class FastResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             g_matrix[i - 1] = conductivity
         return g_matrix
 
-    def calculate_voltage_distribution(self, gate_v=0):
+    def calculate_voltage_distribution(self, gate_v=0, conductivities=None):
+        # Input parameter conductivities is not used in the fast model
+        # but taken as a parameter for compatibility with the direct model
+
         t = time.time()
         self.g_matrix = self.create_conductivities_from_image(gate_v=gate_v)
         print('Create conductivities: ', time.time() - t)
