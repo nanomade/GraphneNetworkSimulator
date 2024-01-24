@@ -57,6 +57,7 @@ a perfect square. For large network, we could argue that the difference between 
 configuration and a perfect square is quite small. Since a proper square grid is much more
 convenient, most calculations are performed in a grid like this:
 
+.. code-block::
 G(1,1)--G(1,2)--G(1,3)--G(1,4)
 |       |       |       |
 G(2,1)--G(2,2)--G(2,3)--G(2,4)
