@@ -112,7 +112,7 @@ class RNVisualizer:
 def parse_args():
     msg = """
     For model direct, use size values higher then ~90 with caution.
-    For model direct, max size for 8GB memory is approximately is ~200 - this is
+    For model fast, max size for 8GB memory is approximately is ~200 - this is
     limited by the memory required to hold the dense version of the calculation matrix.
     """
     # It should be possible to improve this by populating the sparse matrix directly
@@ -120,7 +120,7 @@ def parse_args():
     parser = argparse.ArgumentParser(prog="main.py", description=msg)
     parser.add_argument("size", type=int, nargs=1, help="The size of the network")
     parser.add_argument("--hard-code-network", action="store_true")
-    parser.add_argument("--gate_v", type=float, nargs=1, default=0, help="Gate voltage")
+    parser.add_argument("--gate_v", type=float, nargs=1, default=[0], help="Gate voltage")
     parser.add_argument(
         "--model",
         required=False,
@@ -156,7 +156,7 @@ def main():
 
         # size must be 3 for fixed_conductivity_table()
         # conductivities = fixed_conductivity_table()
-        # conductivities = create_conductivities(size)
+        conductivities = create_conductivities(size)
     else:
         conductivities = None
     rnv = RNVisualizer(size=size, model=model, skip_images=hard_coded_network)
