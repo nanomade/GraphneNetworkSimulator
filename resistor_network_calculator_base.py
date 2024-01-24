@@ -1,4 +1,5 @@
 import numpy as np
+# np.seterr(all='raise')
 
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -31,7 +32,7 @@ class ResistorNetworkCalculatorBase:
         # Split into 3 channels
         c['red'], c['green'], c['blue'] = image.split()
 
-        image = np.asarray(c[color])
+        image = np.asarray(c[color], dtype=np.uint)
         if plot_image:
             plt.imshow(image)
             plt.colorbar()
