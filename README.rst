@@ -29,24 +29,21 @@ allowed.
 Interpretation of the configuration images
 ------------------------------------------
 
-Principally, the software simulates a network like this:
+Principally, the software should simulate a network like this::
 
-.. code-block:: rst
-
-		
-1--G--2--G--3--G--4
-|     |     |     |
-G     G     G     G
-|     |     |     |
-5--G--6--G--7--G--8
-|     |     |     |
-R     R     R     R
-|     |     |     |
-9--G-10--G-11--G-12
-|     |     |     |
-G     G     G     G
-|     |     |     |
-13-G-14--G-15--G-16
+  1--G--2--G--3--G--4
+  |     |     |     |
+  G     G     G     G
+  |     |     |     |
+  5--G--6--G--7--G--8
+  |     |     |     |
+  G     G     G     G
+  |     |     |     |
+  9--G-10--G-11--G-12
+  |     |     |     |
+  G     G     G     G
+  |     |     |     |
+  13-G-14--G-15--G-16
 
 
 Voltage is measured in the numbered points, and resistors are named by the corresponding
@@ -55,16 +52,15 @@ pair of measurement points.
 However, this is a very impractially arrangement, since the resistors are not arranged in
 a perfect square. For large network, we could argue that the difference between this ideal
 configuration and a perfect square is quite small. Since a proper square grid is much more
-convenient, most calculations are performed in a grid like this:
+convenient, most calculations are performed in a grid like this::
 
-.. code-block::
-G(1,1)--G(1,2)--G(1,3)--G(1,4)
-|       |       |       |
-G(2,1)--G(2,2)--G(2,3)--G(2,4)
-|       |       |       |
-G(3,1)--G(3,2)--G(3,3)--G(3,4)
-|       |       |       |
-G(4,1)--G(4,2)--G(4,3)--G(4,4)
+  G(1,1)--G(1,2)--G(1,3)--G(1,4)
+  |       |       |       |
+  G(2,1)--G(2,2)--G(2,3)--G(2,4)
+  |       |       |       |
+  G(3,1)--G(3,2)--G(3,3)--G(3,4)
+  |       |       |       |
+  G(4,1)--G(4,2)--G(4,3)--G(4,4)
 
 
 The number of measurements points is the same, but the conductivity between each point
