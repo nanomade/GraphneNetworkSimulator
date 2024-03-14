@@ -36,8 +36,8 @@ class RNVisualizer:
             self.rnc = DirectResistorNetworkCalculator(size)
 
         if not skip_images:
-            self.rnc.load_doping_map("doping.png")
-            self.rnc.load_material_maps("conductor.png")
+            self.rnc.load_doping_map('statics/doping.png')
+            self.rnc.load_material_maps('statics/conductor.png')
             # Todo: At some point we should also load a mobility map
 
     def color_map(self):
