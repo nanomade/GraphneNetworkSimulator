@@ -122,4 +122,3 @@ This software is still under development and has a number of limitations:
  * Current can only be sourced from upper left corner and drained from lower right corner.
  * Currently (and maybe forever), only rectangular networks are supported.
 
-l
