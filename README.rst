@@ -72,6 +72,26 @@ You can try out the difference between the two models by testing the models prov
 `example_matrix.py` rather than loading maps from images.
 
 
+Use of the command line tool
+============================
+
+Currently, it is not possible to configure the input images at run time, these will always
+be loaded from `statics/conductor.png`  and `statics/doping.png` - to change the datafiles,
+simply rename your wanted file to fit this.
+
+The command line tool can be executed without arguments, in which case it will output a short
+help message::
+
+ > python main.py
+ usage: main.py [-h] [--hard-code-network] [--gate_v GATE_V] [--model {fast,direct}] size
+ main.py: error: the following arguments are required: size
+
+As seen from the output, only a single argument is required: `size`. If run in this way,
+the program will run with a gate voltage of 0 and unsing the fast model.
+
+If the arguement `hard-code-network` is set, the input images will not be loaded,
+instead the conductivities hard-coded in `example_matrix.py` will be used. In this case
+there will be no gate dependence.
 
 Overview of included files
 ==========================
