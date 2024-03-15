@@ -2,6 +2,8 @@ import time
 import numpy as np
 import scipy as sp
 
+import matplotlib.pyplot as plt
+
 from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
@@ -52,6 +54,12 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         """
         Fill up the sparse NxN matrix
         """
+        diagonal1 = []
+        diagonal2 = []
+        diagonal3 = []
+        diagonal4 = []
+        diagonal5 = []
+    
         c_matrix = np.zeros(shape=(self.size**2, self.size**2), dtype=self.dtype)
         rows = int(c_matrix.shape[0] ** 0.5)
         for i in range(1, c_matrix.shape[0] + 1):
@@ -63,18 +71,65 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             e4 = (i, i + rows)
             if e1 in conductivities:
                 c_matrix[e1[0] - 1, e1[1] - 1] = conductivities[e1]
+                diagonal1.append(conductivities[e1])
                 element += conductivities[e1]
             if e2 in conductivities:
                 c_matrix[e2[0] - 1, e2[1] - 1] = conductivities[e2]
+                diagonal2.append(conductivities[e2])
                 element += conductivities[e2]
             if e3 in conductivities:
                 c_matrix[e3[0] - 1, e3[1] - 1] = conductivities[e3]
+                diagonal4.append(conductivities[e3])
                 element += conductivities[e3]
             if e4 in conductivities:
                 c_matrix[e4[0] - 1, e4[1] - 1] = conductivities[e4]
+                diagonal5.append(conductivities[e4])
                 element += conductivities[e4]
             # Diagonal element
             c_matrix[i - 1, i - 1] = element * -1
+            diagonal3.append(element * -1)
+
+        print('Len diagonal 1: ', len(diagonal1))
+        print('Len diagonal 2: ', len(diagonal2))
+        print('Len diagonal 3: ', len(diagonal3))
+        print('Len diagonal 4: ', len(diagonal4))
+        print('Len diagonal 5: ', len(diagonal5))
+
+        print()
+        print(diagonal4)
+
+
+        print()
+
+        print(c_matrix)
+        # plt.imshow(c_matrix)
+        # plt.colorbar()
+        # plt.show()
+
+       
+        print()
+        print('Diagonal 3:')
+        for i in range(0, c_matrix.shape[0]):
+            diff = diagonal3[i] - c_matrix[i, i]
+            if diff < 1e-9:              
+                print(0, end = ' ')
+            else:
+                print(diff, end = ' ')
+        print()
+        print()
+
+        print()
+        print('Diagonal 4:')
+        for i in range(0, c_matrix.shape[0]):
+            diff = diagonal4[i] - c_matrix[i + 1, i]
+            if diff < 1e-9:              
+                print(0, end = ' ')
+            else:
+                print(diff, end = ' ')
+        print()
+        print()
+
+            
         return c_matrix
 
     def calculate_voltage_distribution(self, gate_v=0, conductivities=None):
@@ -117,9 +172,13 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         self.v_dist = v.reshape(self.size, self.size)
         print(time.time() - t)
 
+        # print(conductivities)
+        
         # Calculate and approximate g-matrix for graphing tools to work
+        print('Calculate g_matrix:')
+        t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
-
+        print(time.time() - t)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

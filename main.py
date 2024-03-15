@@ -133,7 +133,7 @@ def parse_args():
     size = args["size"][0]
     gate_v = args["gate_v"][0]
     if args["model"] is None:
-        model = "fast"
+        model = "direct"
     else:
         model = args["model"][0]
 
