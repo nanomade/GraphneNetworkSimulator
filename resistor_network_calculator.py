@@ -114,8 +114,18 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         # In this example current is sourced in upper left corner and
         # drained in lower right corner
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
-        I[0] = 0.01
-        I[-1] = -0.01
+        in_index = self.size * (self.current_in[1] - 1) + self.current_in[0] -1
+        out_index = self.size * (self.current_out[1] - 1) + self.current_out[0] -1
+        print(len(I))
+        # I[0] = 0.01
+        # I[-1] = -0.01
+        I[in_index] = 0.01
+        I[out_index] = -0.01
+        print('Current in; ', in_index)
+        print('Current out; ', out_index)
+        print(I[out_index])
+        print()
+        print()
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)

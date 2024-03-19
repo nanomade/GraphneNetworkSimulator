@@ -11,7 +11,9 @@ class ResistorNetworkCalculatorBase:
         self.dtype = np.float32  # or float64
 
         self.size = size
-
+        self.current_in = (1,1)
+        self.current_out = (245, 190)
+        
         self.g_matrix = None
 
         self.metal_conductivity = 1e-2
