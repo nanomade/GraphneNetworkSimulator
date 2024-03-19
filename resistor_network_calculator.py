@@ -55,11 +55,6 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         Fill up the sparse NxN matrix
         """
         diagonals = [[], [], [], [], []]
-        # diagonal1 = []
-        # diagonal2 = []
-        # diagonal3 = []
-        # diagonal4 = []
-        # diagonal5 = []
     
         rows = self.size
         for i in range(1, self.size**2 + 1):
@@ -99,9 +94,8 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
 
             diagonals[2].append(element * -1)
 
-        for i in range(0, 5):
-            print('Len diagonal {}: {}'.format(i, len(diagonals[i])))
-
+        # for i in range(0, 5):
+        #     print('Len diagonal {}: {}'.format(i, len(diagonals[i])))
         c_matrix = sp.sparse.diags(diagonals, [self.size*-1, -1, 0, 1, self.size], format='csc')
         return c_matrix
 
@@ -111,7 +105,6 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         beaviour of loading from images.
         """
         t = time.time()
-
         # Conductivities will be calculated according to the standard rules
         # unless a conductivity map has been manually provided
         if conductivities is None:
@@ -128,29 +121,22 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         c_matrix = self.calculate_elements(conductivities)
         print('Calculate elements: ', time.time() - t)
 
-        t = time.time()
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
-        #c_matrix = sp.sparse.csr_matrix(c_matrix)
-        print('Convert to sparse: ', time.time() - t)
         t = time.time()
         v = sp.sparse.linalg.spsolve(c_matrix, I)
-        print(time.time() - t)
         # Direct implementation from slides for comparison
         # c_inv = np.linalg.inv(c_matrix)
         # v = np.matmul(c_inv, I)
+        print('spsolve: {:.2f}s'.format(time.time() - t))
 
         # Re-shape the [N**2x1] vector in to a [NxN] matrix
         self.v_dist = v.reshape(self.size, self.size)
-        print(time.time() - t)
 
-        # print(conductivities)
-        
-        # Calculate and approximate g-matrix for graphing tools to work
-        print('Calculate g_matrix:')
+        # Calculate an approximate g-matrix for graphing tools to work
         t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
-        print(time.time() - t)
+        print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
