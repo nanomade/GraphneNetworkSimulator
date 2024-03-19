@@ -2,10 +2,12 @@ import time
 import numpy as np
 import scipy as sp
 
+import matplotlib.pyplot as plt
+
 from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
-class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
+class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
     def __init__(self, size=10):
         super().__init__(size)
 
@@ -52,29 +54,49 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         """
         Fill up the sparse NxN matrix
         """
-        c_matrix = np.zeros(shape=(self.size**2, self.size**2), dtype=self.dtype)
-        rows = int(c_matrix.shape[0] ** 0.5)
-        for i in range(1, c_matrix.shape[0] + 1):
+        diagonals = [[], [], [], [], []]
+    
+        rows = self.size
+        for i in range(1, self.size**2 + 1):
             element = 0
 
             e1 = (i, i - rows)
-            e2 = (i, i - 1)
-            e3 = (i, i + 1)
-            e4 = (i, i + rows)
             if e1 in conductivities:
-                c_matrix[e1[0] - 1, e1[1] - 1] = conductivities[e1]
+                diagonals[0].append(conductivities[e1])
                 element += conductivities[e1]
+            else:
+                if e1[1] > 0:
+                    diagonals[0].append(0)
+
+            e2 = (i, i - 1)
             if e2 in conductivities:
-                c_matrix[e2[0] - 1, e2[1] - 1] = conductivities[e2]
+                diagonals[1].append(conductivities[e2])
                 element += conductivities[e2]
+            else:
+                if e2[1] > 0:
+                    diagonals[1].append(0)
+
+            e3 = (i, i + 1)
             if e3 in conductivities:
-                c_matrix[e3[0] - 1, e3[1] - 1] = conductivities[e3]
+                diagonals[3].append(conductivities[e3])
                 element += conductivities[e3]
+            else:
+                if e3[1] < self.size**2:
+                    diagonals[3].append(0)
+
+            e4 = (i, i + rows)
             if e4 in conductivities:
-                c_matrix[e4[0] - 1, e4[1] - 1] = conductivities[e4]
+                diagonals[4].append(conductivities[e4])
                 element += conductivities[e4]
-            # Diagonal element
-            c_matrix[i - 1, i - 1] = element * -1
+            else:
+                if e4[1] < self.size**2:
+                    diagonals[4].append(0)
+
+            diagonals[2].append(element * -1)
+
+        # for i in range(0, 5):
+        #     print('Len diagonal {}: {}'.format(i, len(diagonals[i])))
+        c_matrix = sp.sparse.diags(diagonals, [self.size*-1, -1, 0, 1, self.size], format='csc')
         return c_matrix
 
     def calculate_voltage_distribution(self, gate_v=0, conductivities=None):
@@ -83,7 +105,6 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         beaviour of loading from images.
         """
         t = time.time()
-
         # Conductivities will be calculated according to the standard rules
         # unless a conductivity map has been manually provided
         if conductivities is None:
@@ -98,28 +119,24 @@ class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
-        # c_matrix2 = self.calculate_elements_2(conductivities)
         print('Calculate elements: ', time.time() - t)
 
-        t = time.time()
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
-        c_matrix = sp.sparse.csr_matrix(c_matrix)
-        print('Convert to sparse: ', time.time() - t)
         t = time.time()
         v = sp.sparse.linalg.spsolve(c_matrix, I)
-        print(time.time() - t)
         # Direct implementation from slides for comparison
         # c_inv = np.linalg.inv(c_matrix)
         # v = np.matmul(c_inv, I)
+        print('spsolve: {:.2f}s'.format(time.time() - t))
 
         # Re-shape the [N**2x1] vector in to a [NxN] matrix
         self.v_dist = v.reshape(self.size, self.size)
-        print(time.time() - t)
 
-        # Calculate and approximate g-matrix for graphing tools to work
+        # Calculate an approximate g-matrix for graphing tools to work
+        t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
-
+        print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

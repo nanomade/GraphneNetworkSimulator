@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 class ResistorNetworkCalculatorBase:
     def __init__(self, size=10):
-        np.set_printoptions(precision=3, suppress=True, linewidth=170)
+        np.set_printoptions(precision=4, suppress=True, linewidth=170)
         self.dtype = np.float32  # or float64
 
         self.size = size
@@ -88,31 +88,55 @@ class ResistorNetworkCalculatorBase:
             conductivity = self._calculate_graphene_conductivity(row, col, gate_v)
         return conductivity
 
+    # def create_g_matrix(self, conductivities):
+    #     """
+    #     g_matrix is an approximation to the true resistor network where we
+    #     approxmiate the network with a square distribution of conductivities.
+    #     """
+    #     g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
+
+    #     g_matrix_list = {}
+
+    #     for i in range(1, self.size**2 + 1):
+    #         # I fell that it could be defended to start from i here....
+    #         for j in range(1, self.size**2 + 1):
+    #             if (i, j) in conductivities:
+    #                 if i not in g_matrix_list:
+    #                     g_matrix_list[i] = [conductivities[i, j]]
+    #                 else:
+    #                     g_matrix_list[i].append(conductivities[i, j])
+
+    #     for i in range(1, self.size**2 + 1):
+    #         elements = g_matrix_list[i]
+    #         g_matrix[i - 1] = sum(elements) / len(elements)
+
+    #     self.g_matrix = g_matrix
+    #     return g_matrix
+
     def create_g_matrix(self, conductivities):
-        """
-        g_matrix is an approximation to the true resistor network where we
-        approxmiate the network with a square distribution of conductivities.
-        """
-        g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
-
         g_matrix_list = {}
-
+        g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         for i in range(1, self.size**2 + 1):
-            # I fell that it could be defended to start from i here....
-            for j in range(1, self.size**2 + 1):
-                if (i, j) in conductivities:
-                    if i not in g_matrix_list:
-                        g_matrix_list[i] = [conductivities[i, j]]
-                    else:
-                        g_matrix_list[i].append(conductivities[i, j])
+            g_matrix_list[i] = []
+            row = 1 + (i - 1) // self.size
+            col = 1 + (i - 1) % self.size
+
+            for coord in [
+                    (i, i + 1), (i, i - 1), (i, i - self.size), (i, i + self.size)
+            ]:
+                value = conductivities.get(coord)
+                if value is not None:
+                    g_matrix_list[i].append(value)
+            # print(i, ' row: ', row, '  col: ', col, 'list: ', g_matrix_list[i])
 
         for i in range(1, self.size**2 + 1):
             elements = g_matrix_list[i]
             g_matrix[i - 1] = sum(elements) / len(elements)
 
-        self.g_matrix = g_matrix
+        # print(g_matrix)
         return g_matrix
 
+            
     def calculate_current_density(self):
         """
         Calculate current density. Independant of the calculation backend,
