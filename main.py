@@ -27,14 +27,16 @@ added as they show up:
 
 
 class RNVisualizer:
-    def __init__(self, size: int = 20, skip_images: bool = False):
+    def __init__(
+            self, size: int, skip_images: bool,
+            current_electrodes: ((int, int), (int, int))
+    ):
         self.size = size
-        self.rnc = ResistorNetworkCalculator(size)
+        self.rnc = ResistorNetworkCalculator(size, current_electrodes)
 
         if not skip_images:
             self.rnc.load_doping_map('statics/doping.png')
             self.rnc.load_material_maps('statics/conductor.png')
-            # Todo: At some point we should also load a mobility map
 
     def color_map(self):
         if self.rnc.v_dist is None:
@@ -84,8 +86,8 @@ class RNVisualizer:
         ax.text(0.05, 1.10, "Potential", transform=ax.transAxes, **params)
         # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
+        plt.colorbar()
 
-        # plt.colorbar()
         plt.show()
 
     def plot_surface(self):
@@ -106,10 +108,21 @@ class RNVisualizer:
 
 
 def parse_args():
-    msg = 'Use size values higher then 1000 with caution.'
+    def position(s):
+        try:
+            x, y = map(int, s.split(','))
+            return x, y
+        except Exception:
+            raise argparse.ArgumentTypeError('Position must be x,y')
 
+    msg = 'Use size values higher then 1000 with caution.'
     parser = argparse.ArgumentParser(prog="main.py", description=msg)
     parser.add_argument("size", type=int, nargs=1, help="The size of the network")
+
+    help = 'Current input coordinate (x, y)'
+    parser.add_argument('--current_in', help=help, type=position, nargs=1)
+    help = 'Current output coordinate (x, y)'
+    parser.add_argument('--current_out', help=help, type=position, nargs=1)
     parser.add_argument("--hard-code-network", action="store_true")
     parser.add_argument("--gate_v", type=float,
                         nargs=1, default=[0], help="Gate voltage")
@@ -117,18 +130,23 @@ def parse_args():
 
     size = args["size"][0]
     gate_v = args["gate_v"][0]
+
+    current_in = (1, 1)
+    if args['current_in'] is not None:
+        current_in = args['current_in'][0]
+    current_out = (size, size)
+    if args['current_out'] is not None:
+        current_out = args['current_out'][0]
+    current_electrodes = (current_in, current_out)
+
     if args["hard_code_network"]:
         gate_v = 0
-        print()
-        print("Hardcodet resistor network")
-        print('Images not loaded, gate is ignored, model is "direct"')
-        print(msg)
-        print()
-    return size, gate_v, args["hard_code_network"]
+        print("Hardcodet resistor network - images not loaded")
+    return size, gate_v, args["hard_code_network"], current_electrodes
 
 
 def main():
-    size, gate_v, hard_coded_network = parse_args()
+    size, gate_v, hard_coded_network, current_electrodes = parse_args()
     if hard_coded_network:
         from example_matrix import fixed_conductivity_table
         from example_matrix import create_conductivities
@@ -138,23 +156,18 @@ def main():
         conductivities = create_conductivities(size)
     else:
         conductivities = None
-    rnv = RNVisualizer(size=size, skip_images=hard_coded_network)
 
-    rnv.rnc.calculate_voltage_distribution(gate_v=gate_v, conductivities=conductivities)
+    rnv = RNVisualizer(
+        size=size,
+        skip_images=hard_coded_network,
+        current_electrodes=current_electrodes
+    )
+
+    rnv.rnc.calculate_voltage_distribution(
+        gate_v=gate_v,
+        conductivities=conductivities
+    )
     rnv.color_map()
-
-    # rnv.rnc.calculate_voltage_distribution(gate_v=0)
-    # fig, ax = plt.subplots(1, 1)
-    # im = ax.imshow(rnv.rnc.v_dist)
-    # plt.colorbar()
-    # plt.show()
-    # for gate_v in range(-50, 50):
-    #     print(gate_v)
-    #     rnv.rnc.calculate_voltage_distribution(gate_v=gate_v)
-    #     im.set_data(rnv.rnc.v_dist)
-    #     fig.canvas.draw_idle()
-    #     plt.pause(0.1)
-    # #     # RN.plot_surface()
 
 
 if __name__ == "__main__":

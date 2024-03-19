@@ -8,8 +8,8 @@ from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
 class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
-    def __init__(self, size=10):
-        super().__init__(size)
+    def __init__(self, size, current_electrodes):
+        super().__init__(size, current_electrodes)
 
     def create_conductivities_from_image(self, gate_v=0):
         """
@@ -21,10 +21,16 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             row = 1 + (i - 1) // self.size
             col = 1 + (i - 1) % self.size
 
-            conductivity = self.calculate_conductivity(row, col, gate_v)
-            # print(i, 'Row: ', row, 'Col: ', col, 'G: ', conductivity)
-            # g_matrix[i - 1] = conductivity
+            dist_current_in = ((self.current_in[0] - row)**2 + (self.current_in[1] - col)**2) ** 0.5
+            dist_current_out = ((self.current_out[0] - row)**2 + (self.current_out[1] - col)**2) ** 0.5
+            dist = min(dist_current_in, dist_current_out)
 
+            conductivity = self.calculate_conductivity(row, col, gate_v)
+            # Metalize the contacts
+            if dist <= (self.size / 50) + 1:
+                conductivity = self.metal_conductivity
+
+            # print(i, 'Row: ', row, 'Col: ', col, 'G: ', conductivity)
             # Left of current element
             if col > 1:  # First column has no element to the left
                 x = i - 1
@@ -55,7 +61,7 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         Fill up the sparse NxN matrix
         """
         diagonals = [[], [], [], [], []]
-    
+
         rows = self.size
         for i in range(1, self.size**2 + 1):
             element = 0
@@ -96,7 +102,8 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
 
         # for i in range(0, 5):
         #     print('Len diagonal {}: {}'.format(i, len(diagonals[i])))
-        c_matrix = sp.sparse.diags(diagonals, [self.size*-1, -1, 0, 1, self.size], format='csc')
+        c_matrix = sp.sparse.diags(
+            diagonals, [self.size*-1, -1, 0, 1, self.size], format='csc')
         return c_matrix
 
     def calculate_voltage_distribution(self, gate_v=0, conductivities=None):
@@ -111,21 +118,11 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             conductivities = self.create_conductivities_from_image(gate_v=gate_v)
         print('Create conductivities: ', time.time() - t)
 
-        # In this example current is sourced in upper left corner and
-        # drained in lower right corner
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
-        in_index = self.size * (self.current_in[1] - 1) + self.current_in[0] -1
-        out_index = self.size * (self.current_out[1] - 1) + self.current_out[0] -1
-        print(len(I))
-        # I[0] = 0.01
-        # I[-1] = -0.01
+        in_index = self.size * (self.current_in[0] - 1) + self.current_in[1] - 1
+        out_index = self.size * (self.current_out[0] - 1) + self.current_out[1] - 1
         I[in_index] = 0.01
         I[out_index] = -0.01
-        print('Current in; ', in_index)
-        print('Current out; ', out_index)
-        print(I[out_index])
-        print()
-        print()
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
@@ -147,6 +144,7 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
         print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
