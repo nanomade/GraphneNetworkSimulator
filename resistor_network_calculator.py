@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
-class DirectResistorNetworkCalculator(ResistorNetworkCalculatorBase):
+class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
     def __init__(self, size=10):
         super().__init__(size)
 
