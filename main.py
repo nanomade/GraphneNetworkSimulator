@@ -3,8 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
 
-from resistor_network_calculator_direct import DirectResistorNetworkCalculator
-from resistor_network_calculator_fast import FastResistorNetworkCalculator
+from resistor_network_calculator import ResistorNetworkCalculator
 
 
 """
@@ -28,12 +27,9 @@ added as they show up:
 
 
 class RNVisualizer:
-    def __init__(self, size: int = 20, model: str = "fast", skip_images: bool = False):
+    def __init__(self, size: int = 20, skip_images: bool = False):
         self.size = size
-        if model == "fast":
-            self.rnc = FastResistorNetworkCalculator(size)
-        else:
-            self.rnc = DirectResistorNetworkCalculator(size)
+        self.rnc = ResistorNetworkCalculator(size)
 
         if not skip_images:
             self.rnc.load_doping_map('statics/doping.png')
@@ -110,46 +106,29 @@ class RNVisualizer:
 
 
 def parse_args():
-    msg = """
-    For model direct, use size values higher then ~90 with caution.
-    For model fast, max size for 8GB memory is approximately is ~200 - this is
-    limited by the memory required to hold the dense version of the calculation matrix.
-    """
-    # It should be possible to improve this by populating the sparse matrix directly
+    msg = 'Use size values higher then 1000 with caution.'
 
     parser = argparse.ArgumentParser(prog="main.py", description=msg)
     parser.add_argument("size", type=int, nargs=1, help="The size of the network")
     parser.add_argument("--hard-code-network", action="store_true")
-    parser.add_argument("--gate_v", type=float, nargs=1, default=[0], help="Gate voltage")
-    parser.add_argument(
-        "--model",
-        required=False,
-        nargs=1,
-        choices=["fast", "direct"],
-        help="Calculation backend (default is fast)",
-    )
+    parser.add_argument("--gate_v", type=float,
+                        nargs=1, default=[0], help="Gate voltage")
     args = vars(parser.parse_args())
 
     size = args["size"][0]
     gate_v = args["gate_v"][0]
-    if args["model"] is None:
-        model = "direct"
-    else:
-        model = args["model"][0]
-
     if args["hard_code_network"]:
         gate_v = 0
-        model = "direct"
         print()
         print("Hardcodet resistor network")
         print('Images not loaded, gate is ignored, model is "direct"')
         print(msg)
         print()
-    return size, gate_v, model, args["hard_code_network"]
+    return size, gate_v, args["hard_code_network"]
 
 
 def main():
-    size, gate_v, model, hard_coded_network = parse_args()
+    size, gate_v, hard_coded_network = parse_args()
     if hard_coded_network:
         from example_matrix import fixed_conductivity_table
         from example_matrix import create_conductivities
@@ -159,7 +138,7 @@ def main():
         conductivities = create_conductivities(size)
     else:
         conductivities = None
-    rnv = RNVisualizer(size=size, model=model, skip_images=hard_coded_network)
+    rnv = RNVisualizer(size=size, skip_images=hard_coded_network)
 
     rnv.rnc.calculate_voltage_distribution(gate_v=gate_v, conductivities=conductivities)
     rnv.color_map()
