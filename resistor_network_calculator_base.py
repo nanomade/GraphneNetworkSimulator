@@ -6,13 +6,15 @@ import matplotlib.pyplot as plt
 
 
 class ResistorNetworkCalculatorBase:
-    def __init__(self, size, current_electrodes):
+    def __init__(self, size, current_electrodes, vmeter_electrodes):
         np.set_printoptions(precision=4, suppress=True, linewidth=170)
         self.dtype = np.float32  # or float64
 
         self.size = size
         self.current_in = current_electrodes[0]
         self.current_out = current_electrodes[1]
+        self.vmeter_low = vmeter_electrodes[0]
+        self.vmeter_high = vmeter_electrodes[1]
 
         self.metal_conductivity = 1e-2
         self.minimal_conductivity = 1e-5
