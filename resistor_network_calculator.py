@@ -8,8 +8,14 @@ from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
 class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
-    def __init__(self, size, current_electrodes):
-        super().__init__(size, current_electrodes)
+    def __init__(self, size, current_electrodes, vmeter_electrodes):
+        super().__init__(size, current_electrodes, vmeter_electrodes)
+
+    @staticmethod
+    def _dist(a, b):
+        distance_sq = (a[0] - b[0])**2 + (a[1] - b[1])**2
+        distance = distance_sq ** 0.5
+        return distance
 
     def create_conductivities_from_image(self, gate_v=0):
         """
@@ -21,9 +27,11 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             row = 1 + (i - 1) // self.size
             col = 1 + (i - 1) % self.size
 
-            dist_current_in = ((self.current_in[0] - row)**2 + (self.current_in[1] - col)**2) ** 0.5
-            dist_current_out = ((self.current_out[0] - row)**2 + (self.current_out[1] - col)**2) ** 0.5
-            dist = min(dist_current_in, dist_current_out)
+            dist_current_in = self._dist(a=self.current_in, b=[row, col])
+            dist_current_out = self._dist(a=self.current_out, b=[row, col])
+            dist_vmeter_low = self._dist(a=self.vmeter_low, b=[row, col])
+            dist_vmeter_high = self._dist(a=self.vmeter_high, b=[row, col])
+            dist = min(dist_current_in, dist_current_out, dist_vmeter_low, dist_vmeter_high)
 
             conductivity = self.calculate_conductivity(row, col, gate_v)
             # Metalize the contacts
@@ -116,7 +124,7 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         # unless a conductivity map has been manually provided
         if conductivities is None:
             conductivities = self.create_conductivities_from_image(gate_v=gate_v)
-        print('Create conductivities: ', time.time() - t)
+        print('Create conductivities: {:.2f}s'.format(time.time() - t))
 
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         in_index = self.size * (self.current_in[0] - 1) + self.current_in[1] - 1
@@ -126,16 +134,18 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
-        print('Calculate elements: ', time.time() - t)
+        print('Calculate elements: {:.2f}s'.format(time.time() - t))
 
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
         t = time.time()
         v = sp.sparse.linalg.spsolve(c_matrix, I)
-        # Direct implementation from slides for comparison
-        # c_inv = np.linalg.inv(c_matrix)
-        # v = np.matmul(c_inv, I)
         print('spsolve: {:.2f}s'.format(time.time() - t))
+        # Direct implementation from slides for comparison
+        # t = time.time()
+        # c_inv = sp.sparse.linalg.inv(c_matrix)
+        # v = c_inv @ I
+        # print('Inverte and multiply: {:.2f}s'.format(time.time() - t))
 
         # Re-shape the [N**2x1] vector in to a [NxN] matrix
         self.v_dist = v.reshape(self.size, self.size)
