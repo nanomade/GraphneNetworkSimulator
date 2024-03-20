@@ -13,15 +13,10 @@ added as they show up:
 
  * Export an animation of the conductivity, current-density and voltage
    as a function of gate sweep
- * Take mobiliy as an input map
  * Take metal and isolator conductivities as parameters rather than
    hard-coded values
  * Implement function to plot voltage between any two points as function
    of gate voltage
- * Investigate potential significant speedup by populating the sparse
-   matrix directly. Here we should be able to take advantage of the
-   fact that it is a sparse diagonal matrix;
-   https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.diags.html
  * Make a GUI to operate the program
 """
 
@@ -29,10 +24,12 @@ added as they show up:
 class RNVisualizer:
     def __init__(
             self, size: int, skip_images: bool,
-            current_electrodes: ((int, int), (int, int))
+            current_electrodes: ((int, int), (int, int)),
+            vmeter_electrodes: ((int, int), (int, int))
     ):
         self.size = size
-        self.rnc = ResistorNetworkCalculator(size, current_electrodes)
+        self.rnc = ResistorNetworkCalculator(
+            size, current_electrodes, vmeter_electrodes)
 
         if not skip_images:
             self.rnc.load_doping_map('statics/doping.png')
@@ -80,6 +77,7 @@ class RNVisualizer:
         )
         current_density = self.rnc.calculate_current_density()
         plt.imshow(current_density, norm=colors.LogNorm())
+        # plt.imshow(current_density)
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
@@ -123,6 +121,11 @@ def parse_args():
     parser.add_argument('--current_in', help=help, type=position, nargs=1)
     help = 'Current output coordinate (x, y)'
     parser.add_argument('--current_out', help=help, type=position, nargs=1)
+    help = 'Vmeter low coordinate (x, y)'
+    parser.add_argument('--vmeter_low', help=help, type=position, nargs=1)
+    help = 'Vmeter high coordinate (x, y)'
+    parser.add_argument('--vmeter_high', help=help, type=position, nargs=1)
+
     parser.add_argument("--hard-code-network", action="store_true")
     parser.add_argument("--gate_v", type=float,
                         nargs=1, default=[0], help="Gate voltage")
@@ -139,14 +142,22 @@ def parse_args():
         current_out = args['current_out'][0]
     current_electrodes = (current_in, current_out)
 
+    vmeter_low = (1, 1)
+    if args['vmeter_low'] is not None:
+        vmeter_low = args['vmeter_low'][0]
+    vmeter_high = (size, size)
+    if args['vmeter_high'] is not None:
+        vmeter_high = args['vmeter_high'][0]
+    vmeter_electrodes = (vmeter_low, vmeter_high)
+
     if args["hard_code_network"]:
         gate_v = 0
         print("Hardcodet resistor network - images not loaded")
-    return size, gate_v, args["hard_code_network"], current_electrodes
+    return size, gate_v, args["hard_code_network"], current_electrodes, vmeter_electrodes
 
 
 def main():
-    size, gate_v, hard_coded_network, current_electrodes = parse_args()
+    size, gate_v, hard_coded_network, current_electrodes, vmeter_electrodes = parse_args()
     if hard_coded_network:
         from example_matrix import fixed_conductivity_table
         from example_matrix import create_conductivities
@@ -160,7 +171,8 @@ def main():
     rnv = RNVisualizer(
         size=size,
         skip_images=hard_coded_network,
-        current_electrodes=current_electrodes
+        current_electrodes=current_electrodes,
+        vmeter_electrodes=vmeter_electrodes
     )
 
     rnv.rnc.calculate_voltage_distribution(
