@@ -130,6 +130,18 @@ class ResistorNetworkCalculatorBase:
             print(msg.format(v_low, v_high, v_total))
         return v_total
 
+    def gate_sweep(self, gate_low, gate_high, stepsize):
+        gate_voltages = np.arange(gate_low, gate_high, stepsize)
+        voltages = np.zeros(len(gate_voltages))
+
+        for i in range(0, len(gate_voltages)):
+            gate_v = gate_voltages[i]
+            self.calculate_voltage_distribution(gate_v=gate_v)
+            voltages[i] = self.calculate_voltmeter_output()
+            if self.debug:
+                print('Gatesweep: ', i, gate_v, voltages[i])
+        return gate_voltages, voltages
+
     def calculate_current_density(self):
         """
         Calculate current density. Independant of the calculation backend,
