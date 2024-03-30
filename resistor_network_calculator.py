@@ -124,7 +124,8 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         # unless a conductivity map has been manually provided
         if conductivities is None:
             conductivities = self.create_conductivities_from_image(gate_v=gate_v)
-        print('Create conductivities: {:.2f}s'.format(time.time() - t))
+        if self.debug:
+            print('Create conductivities: {:.2f}s'.format(time.time() - t))
 
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         in_index = self.size * (self.current_in[0] - 1) + self.current_in[1] - 1
@@ -134,13 +135,15 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
-        print('Calculate elements: {:.2f}s'.format(time.time() - t))
+        if self.debug:
+            print('Calculate elements: {:.2f}s'.format(time.time() - t))
 
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
         t = time.time()
         v = sp.sparse.linalg.spsolve(c_matrix, I)
-        print('spsolve: {:.2f}s'.format(time.time() - t))
+        if self.debug:
+            print('spsolve: {:.2f}s'.format(time.time() - t))
         # Direct implementation from slides for comparison
         # t = time.time()
         # c_inv = sp.sparse.linalg.inv(c_matrix)
@@ -153,7 +156,8 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         # Calculate an approximate g-matrix for graphing tools to work
         t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
-        print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
+        if self.debug:
+            print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
 
 
 if __name__ == '__main__':
