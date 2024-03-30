@@ -120,6 +120,14 @@ def parse_args():
         except Exception:
             raise argparse.ArgumentTypeError('Position must be x,y')
 
+    def gate(s):
+        args = s.split(',')
+        if len(args) == 1:
+            gate_v = float(args[0])
+        elif len(args) == 3:
+            gate_v = (float(args[0]), float(args[1]), float(args[2]))
+        return gate_v
+
     msg = 'Use size values higher then 1000 with caution.'
     parser = argparse.ArgumentParser(prog="main.py", description=msg)
     parser.add_argument("size", type=int, nargs=1, help="The size of the network")
@@ -132,15 +140,17 @@ def parse_args():
     parser.add_argument('--vmeter_low', help=help, type=position, nargs=1)
     help = 'Vmeter high coordinate (x, y)'
     parser.add_argument('--vmeter_high', help=help, type=position, nargs=1)
+    help = 'Gate voltage. Legal values are a scalar value, or low,high,stepsize'
+    parser.add_argument("--gate_v", type=gate, nargs=1, default=[0], help=help)
 
     parser.add_argument("--print-extra-output", action="store_true")
     parser.add_argument("--hard-code-network", action="store_true")
-    parser.add_argument("--gate_v", type=float,
-                        nargs=1, default=[0], help="Gate voltage")
+
+
     args = vars(parser.parse_args())
 
-    size = args["size"][0]
-    gate_v = args["gate_v"][0]
+    size = args['size'][0]
+    gate_v = args['gate_v'][0]
 
     current_in = (1, 1)
     if args['current_in'] is not None:
@@ -187,13 +197,15 @@ def main():
     if extra_output:
         rnv.rnc.enable_extra_debug_output()
 
-    rnv.rnc.calculate_voltage_distribution(
-        gate_v=gate_v,
-        conductivities=conductivities
-    )
-    rnv.color_map()
+    if type(gate_v) == float:
+        rnv.rnc.calculate_voltage_distribution(
+            gate_v=gate_v,
+            conductivities=conductivities
+        )
+        rnv.color_map()
 
-    rnv.plot_gate_sweep(-5, 5, 0.1)
+    if type(gate_v) == tuple:
+        rnv.plot_gate_sweep(gate_v[0], gate_v[1], gate_v[2])
 
 
 if __name__ == "__main__":
