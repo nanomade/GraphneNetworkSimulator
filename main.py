@@ -126,6 +126,7 @@ def parse_args():
     help = 'Vmeter high coordinate (x, y)'
     parser.add_argument('--vmeter_high', help=help, type=position, nargs=1)
 
+    parser.add_argument("--print-extra-output", action="store_true")
     parser.add_argument("--hard-code-network", action="store_true")
     parser.add_argument("--gate_v", type=float,
                         nargs=1, default=[0], help="Gate voltage")
@@ -150,14 +151,15 @@ def parse_args():
         vmeter_high = args['vmeter_high'][0]
     vmeter_electrodes = (vmeter_low, vmeter_high)
 
-    if args["hard_code_network"]:
+    if args['hard_code_network']:
         gate_v = 0
         print("Hardcodet resistor network - images not loaded")
-    return size, gate_v, args["hard_code_network"], current_electrodes, vmeter_electrodes
+
+    return size, gate_v, args["hard_code_network"], args['print_extra_output'], current_electrodes, vmeter_electrodes
 
 
 def main():
-    size, gate_v, hard_coded_network, current_electrodes, vmeter_electrodes = parse_args()
+    size, gate_v, hard_coded_network, extra_output, current_electrodes, vmeter_electrodes = parse_args()
     if hard_coded_network:
         from example_matrix import fixed_conductivity_table
         from example_matrix import create_conductivities
@@ -174,6 +176,9 @@ def main():
         current_electrodes=current_electrodes,
         vmeter_electrodes=vmeter_electrodes
     )
+
+    if extra_output:
+        rnv.rnc.enable_extra_debug_output()
 
     rnv.rnc.calculate_voltage_distribution(
         gate_v=gate_v,
