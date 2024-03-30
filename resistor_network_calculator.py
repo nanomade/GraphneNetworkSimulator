@@ -153,6 +153,7 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         # Re-shape the [N**2x1] vector in to a [NxN] matrix
         self.v_dist = v.reshape(self.size, self.size)
 
+        # TODO! This is not always needed - refactor this into separate function!!!
         # Calculate an approximate g-matrix for graphing tools to work
         t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
