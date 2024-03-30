@@ -122,8 +122,8 @@ class ResistorNetworkCalculatorBase:
         if self.v_dist is None:
             return 0
 
-        v_low = self.v_dist[self.vmeter_low]
-        v_high = self.v_dist[self.vmeter_high]
+        v_low = self.v_dist[self.vmeter_low[0] - 1, self.vmeter_low[1] - 1]
+        v_high = self.v_dist[self.vmeter_high[0] - 1, self.vmeter_high[1] - 1]
         v_total = v_high - v_low
         if self.debug:
             msg = 'Vlow={:.2f}V. Vhigh={:.2f}V. V={:.2f}V.'
