@@ -35,6 +35,13 @@ class RNVisualizer:
             self.rnc.load_doping_map('statics/doping.png')
             self.rnc.load_material_maps('statics/conductor.png')
 
+    def plot_gate_sweep(self, gate_low, gate_high, stepsize):
+        gate, voltages = self.rnc.gate_sweep(gate_low, gate_high, stepsize)
+        fig = plt.figure()  # Figsize...
+        ax = fig.add_subplot(1, 1, 1)
+        ax.plot(gate, voltages)
+        plt.show()
+
     def color_map(self):
         if self.rnc.v_dist is None:
             print("Voltage map has not been calculated")
@@ -185,6 +192,8 @@ def main():
         conductivities=conductivities
     )
     rnv.color_map()
+
+    rnv.plot_gate_sweep(-5, 5, 0.1)
 
 
 if __name__ == "__main__":
