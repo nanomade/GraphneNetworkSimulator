@@ -9,6 +9,7 @@ class ResistorNetworkCalculatorBase:
     def __init__(self, size, current_electrodes, vmeter_electrodes):
         np.set_printoptions(precision=4, suppress=True, linewidth=170)
         self.dtype = np.float32  # or float64
+        self.debug = False
 
         self.size = size
         self.current_in = current_electrodes[0]
@@ -41,6 +42,9 @@ class ResistorNetworkCalculatorBase:
             plt.colorbar()
             plt.show()
         return image
+
+    def enable_extra_debug_output(self):
+        self.debug = True
 
     def load_doping_map(self, filename):
         doping_map = np.zeros(shape=(self.size, self.size), dtype=self.dtype)
@@ -113,6 +117,18 @@ class ResistorNetworkCalculatorBase:
 
         # print(g_matrix)
         return g_matrix
+
+    def calculate_voltmeter_output(self):
+        if self.v_dist is None:
+            return 0
+
+        v_low = self.v_dist[self.vmeter_low]
+        v_high = self.v_dist[self.vmeter_high]
+        v_total = v_high - v_low
+        if self.debug:
+            msg = 'Vlow={:.2f}V. Vhigh={:.2f}V. V={:.2f}V.'
+            print(msg.format(v_low, v_high, v_total))
+        return v_total
 
     def calculate_current_density(self):
         """
