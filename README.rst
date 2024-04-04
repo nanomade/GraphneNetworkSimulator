@@ -72,6 +72,17 @@ You can try out the difference between the two models by testing the models prov
 `example_matrix.py` rather than loading maps from images.
 
 
+Performance considerations
+==========================
+
+As explained in the course notes, the simulation involces solving the form GxV = I, with
+V and I both being of a size of area of the network, ie the square for the `size` parameter
+given to the program. The size of G is the square of the value, ie `size`⁴. This means
+that the runtime and memory requirement of the calculation could be expected to have a
+runtime complexety of O(`size`⁴)
+
+
+
 Use of the command line tool
 ============================
 
@@ -83,15 +94,29 @@ The command line tool can be executed without arguments, in which case it will o
 help message::
 
  > python main.py
- usage: main.py [-h] [--hard-code-network] [--gate_v GATE_V] [--model {fast,direct}] size
- main.py: error: the following arguments are required: size
+ usage: main.py [-h] [--current_in CURRENT_IN] [--current_out CURRENT_OUT] [--vmeter_low VMETER_LOW] [--vmeter_high VMETER_HIGH] [--gate_v GATE_V] [--print-extra-output] [--hard-code-network] size
 
-As seen from the output, only a single argument is required: `size`. If run in this way,
-the program will run with a gate voltage of 0 and unsing the fast model.
+As seen from the output, only a single argument is required: `size`. If run in this way, the
+model will use a gate voltage of zero, and place both the volt-meter and source electrodes
+in the corner of the sample.
 
-If the arguement `hard-code-network` is set, the input images will not be loaded,
-instead the conductivities hard-coded in `example_matrix.py` will be used. In this case
-there will be no gate dependence.
+If the arguement `hard-code-network` is set, the input images will not be loaded, instead
+the conductivities hard-coded in `example_matrix.py` will be used. In this case there will
+be no gate dependence.
+
+Parameters `current_in`, `current_out`, `vmeter_low`and `vmeter_high` positions the four
+electrodes. A small patch of metal will be programmatically added around each probe
+independant of the conductivities loaded from the images. Syntas for the four parameters
+are all of the form `--vmeter_low=y,x`
+
+
+Examples
+--------
+
+The two configuration from Figure 19 in the notes can be obtained by the following two commands:
+
+ * `python main.py --gate_v=0 --current_in=125,10 --current_out=125,240 --vmeter_low=5,50 --vmeter_high=5,200 --print 250`
+ * `python main.py --gate_v=0 --current_in=245,5 --current_out=245,245 --vmeter_low=5,50 --vmeter_high=5,200 --print 250`
 
 Overview of included files
 ==========================
@@ -119,6 +144,5 @@ This software is still under development and has a number of limitations:
 
  * Missing validation of size-input from command prompt
  * Names of input files are harcodet as `doping.png` and `conductor.png`.
- * Current can only be sourced from upper left corner and drained from lower right corner.
  * Currently (and maybe forever), only rectangular networks are supported.
 
