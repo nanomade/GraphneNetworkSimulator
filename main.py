@@ -141,7 +141,7 @@ def parse_args():
     help = 'Vmeter high coordinate (x, y)'
     parser.add_argument('--vmeter_high', help=help, type=position, nargs=1)
     help = 'Gate voltage. Legal values are a scalar value, or low,high,stepsize'
-    parser.add_argument("--gate_v", type=gate, nargs=1, default=[0], help=help)
+    parser.add_argument("--gate_v", type=gate, nargs=1, default=[None], help=help)
 
     parser.add_argument("--print-extra-output", action="store_true")
     parser.add_argument("--hard-code-network", action="store_true")
@@ -197,11 +197,19 @@ def main():
     if extra_output:
         rnv.rnc.enable_extra_debug_output()
 
+    if gate_v is None:
+        rnv.rnc.calculate_voltage_distribution(
+            gate_v=0,
+            conductivities=conductivities
+        )
+        print('Measured voltage: {:.2f}V'.format(rnv.rnc.calculate_voltmeter_output()))
+
     if type(gate_v) == float:
         rnv.rnc.calculate_voltage_distribution(
             gate_v=gate_v,
             conductivities=conductivities
         )
+        print('Measured voltage: {:.2f}V'.format(rnv.rnc.calculate_voltmeter_output()))
         rnv.color_map()
 
     if type(gate_v) == tuple:
