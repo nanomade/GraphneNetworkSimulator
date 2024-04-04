@@ -81,6 +81,8 @@ given to the program. The size of G is the square of the value, ie `size`⁴. Th
 that the runtime and memory requirement of the calculation could be expected to have a
 runtime complexety of O(`size`⁴)
 
+https://github.com/scikit-umfpack/scikit-umfpack
+https://github.com/haasad/PyPardiso
 
 
 Use of the command line tool
