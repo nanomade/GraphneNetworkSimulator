@@ -64,7 +64,7 @@ class RNVisualizer:
 
         if self.rnc.metal_map is not None:
             ax = fig.add_subplot(2, 3, 2)
-            ax.text(0.05, 1.10, "Contacts", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Metal", transform=ax.transAxes, **params)
             plt.imshow(self.rnc.metal_map)
 
         if self.rnc.graphene_map is not None:
@@ -202,14 +202,14 @@ def main():
             gate_v=0,
             conductivities=conductivities
         )
-        print('Measured voltage: {:.2f}V'.format(rnv.rnc.calculate_voltmeter_output()))
+        print('Measured voltage: {:.3f}V'.format(rnv.rnc.calculate_voltmeter_output()))
 
     if type(gate_v) == float:
         rnv.rnc.calculate_voltage_distribution(
             gate_v=gate_v,
             conductivities=conductivities
         )
-        print('Measured voltage: {:.2f}V'.format(rnv.rnc.calculate_voltmeter_output()))
+        print('Measured voltage: {:.3f}V'.format(rnv.rnc.calculate_voltmeter_output()))
         rnv.color_map()
 
     if type(gate_v) == tuple:
