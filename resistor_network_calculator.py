@@ -130,8 +130,8 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         in_index = self.size * (self.current_in[0] - 1) + self.current_in[1] - 1
         out_index = self.size * (self.current_out[0] - 1) + self.current_out[1] - 1
-        I[in_index] = 0.01
-        I[out_index] = -0.01
+        I[in_index] = 0.001
+        I[out_index] = -0.001
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
@@ -171,22 +171,17 @@ if __name__ == '__main__':
     # conductivities = example_matrix.fixed_conductivity_table()
 
     # Here size can be chosen more freely
-    size = 5
+    size = 7
     conductivities = example_matrix.create_conductivities(size)
 
-    RNC = ResistorNetworkCalculator(size=size)
+    RNC = ResistorNetworkCalculator(
+        size=size,
+        current_electrodes=[(1,1), (7,7)],
+        vmeter_electrodes=[(1,1), (7,7)]
+    )
     RNC.create_g_matrix(conductivities)
 
     print(conductivities)
-
-    print()
-
-    print(RNC.g_matrix)
-
-    exit()
-
-    # RNC.load_doping_map('doping.png')
-    # RNC.load_material_maps('conductor.png')
 
     RNC.calculate_voltage_distribution(conductivities=conductivities)
 
