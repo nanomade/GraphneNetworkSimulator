@@ -166,9 +166,25 @@ class ResistorNetworkCalculatorBase:
 
 
 if __name__ == "__main__":
+    import example_matrix
     msg = """
-    Base class for the two calculation models.
+    Base class for the calculation models (currenly only one model exists).
 
     Also contains the converter from a strict network model into the square
     approximation, example shown below:
     """
+    print(msg)
+
+    RNCB = ResistorNetworkCalculatorBase(
+        size=5,
+        current_electrodes=[(1,1), (5,5)],
+        vmeter_electrodes=[(1,1), (5,5)]
+    )
+
+    conductivities = example_matrix.create_conductivities(5)
+    print(conductivities)
+
+    print()
+
+    g_matrix = RNCB.create_g_matrix(conductivities)
+    print(g_matrix.reshape(5,5))
