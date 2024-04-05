@@ -6,17 +6,21 @@ import matplotlib.pyplot as plt
 
 
 class ResistorNetworkCalculatorBase:
-    def __init__(self, size=10):
+    def __init__(self, size, current_electrodes, vmeter_electrodes):
         np.set_printoptions(precision=4, suppress=True, linewidth=170)
         self.dtype = np.float32  # or float64
+        self.debug = False
 
         self.size = size
-
-        self.g_matrix = None
+        self.current_in = current_electrodes[0]
+        self.current_out = current_electrodes[1]
+        self.vmeter_low = vmeter_electrodes[0]
+        self.vmeter_high = vmeter_electrodes[1]
 
         self.metal_conductivity = 1e-2
         self.minimal_conductivity = 1e-5
 
+        self.g_matrix = None
         self.graphene_map = None
         self.metal_map = None
         self.doping_map = None
@@ -38,6 +42,9 @@ class ResistorNetworkCalculatorBase:
             plt.colorbar()
             plt.show()
         return image
+
+    def enable_extra_debug_output(self):
+        self.debug = True
 
     def load_doping_map(self, filename):
         doping_map = np.zeros(shape=(self.size, self.size), dtype=self.dtype)
@@ -88,38 +95,13 @@ class ResistorNetworkCalculatorBase:
             conductivity = self._calculate_graphene_conductivity(row, col, gate_v)
         return conductivity
 
-    # def create_g_matrix(self, conductivities):
-    #     """
-    #     g_matrix is an approximation to the true resistor network where we
-    #     approxmiate the network with a square distribution of conductivities.
-    #     """
-    #     g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
-
-    #     g_matrix_list = {}
-
-    #     for i in range(1, self.size**2 + 1):
-    #         # I fell that it could be defended to start from i here....
-    #         for j in range(1, self.size**2 + 1):
-    #             if (i, j) in conductivities:
-    #                 if i not in g_matrix_list:
-    #                     g_matrix_list[i] = [conductivities[i, j]]
-    #                 else:
-    #                     g_matrix_list[i].append(conductivities[i, j])
-
-    #     for i in range(1, self.size**2 + 1):
-    #         elements = g_matrix_list[i]
-    #         g_matrix[i - 1] = sum(elements) / len(elements)
-
-    #     self.g_matrix = g_matrix
-    #     return g_matrix
-
     def create_g_matrix(self, conductivities):
         g_matrix_list = {}
         g_matrix = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
         for i in range(1, self.size**2 + 1):
             g_matrix_list[i] = []
-            row = 1 + (i - 1) // self.size
-            col = 1 + (i - 1) % self.size
+            # row = 1 + (i - 1) // self.size
+            # col = 1 + (i - 1) % self.size
 
             for coord in [
                     (i, i + 1), (i, i - 1), (i, i - self.size), (i, i + self.size)
@@ -136,7 +118,30 @@ class ResistorNetworkCalculatorBase:
         # print(g_matrix)
         return g_matrix
 
-            
+    def calculate_voltmeter_output(self):
+        if self.v_dist is None:
+            return 0
+
+        v_low = self.v_dist[self.vmeter_low[0] - 1, self.vmeter_low[1] - 1]
+        v_high = self.v_dist[self.vmeter_high[0] - 1, self.vmeter_high[1] - 1]
+        v_total = v_high - v_low
+        if self.debug:
+            msg = 'Vlow={:.2f}V. Vhigh={:.2f}V. V={:.2f}V.'
+            print(msg.format(v_low, v_high, v_total))
+        return v_total
+
+    def gate_sweep(self, gate_low, gate_high, stepsize):
+        gate_voltages = np.arange(gate_low, gate_high, stepsize)
+        voltages = np.zeros(len(gate_voltages))
+
+        for i in range(0, len(gate_voltages)):
+            gate_v = gate_voltages[i]
+            self.calculate_voltage_distribution(gate_v=gate_v)
+            voltages[i] = self.calculate_voltmeter_output()
+            if self.debug:
+                print('Gatesweep: ', i, gate_v, voltages[i])
+        return gate_voltages, voltages
+
     def calculate_current_density(self):
         """
         Calculate current density. Independant of the calculation backend,
@@ -161,9 +166,25 @@ class ResistorNetworkCalculatorBase:
 
 
 if __name__ == "__main__":
+    import example_matrix
     msg = """
-    Base class for the two calculation models.
+    Base class for the calculation models (currenly only one model exists).
 
-    Also contains the converter from a strict network model into the square approximation,
-    example shown below:
+    Also contains the converter from a strict network model into the square
+    approximation, example shown below:
     """
+    print(msg)
+
+    RNCB = ResistorNetworkCalculatorBase(
+        size=5,
+        current_electrodes=[(1,1), (5,5)],
+        vmeter_electrodes=[(1,1), (5,5)]
+    )
+
+    conductivities = example_matrix.create_conductivities(5)
+    print(conductivities)
+
+    print()
+
+    g_matrix = RNCB.create_g_matrix(conductivities)
+    print(g_matrix.reshape(5,5))

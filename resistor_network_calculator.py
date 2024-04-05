@@ -8,8 +8,14 @@ from resistor_network_calculator_base import ResistorNetworkCalculatorBase
 
 
 class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
-    def __init__(self, size=10):
-        super().__init__(size)
+    def __init__(self, size, current_electrodes, vmeter_electrodes):
+        super().__init__(size, current_electrodes, vmeter_electrodes)
+
+    @staticmethod
+    def _dist(a, b):
+        distance_sq = (a[0] - b[0])**2 + (a[1] - b[1])**2
+        distance = distance_sq ** 0.5
+        return distance
 
     def create_conductivities_from_image(self, gate_v=0):
         """
@@ -21,10 +27,18 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
             row = 1 + (i - 1) // self.size
             col = 1 + (i - 1) % self.size
 
-            conductivity = self.calculate_conductivity(row, col, gate_v)
-            # print(i, 'Row: ', row, 'Col: ', col, 'G: ', conductivity)
-            # g_matrix[i - 1] = conductivity
+            dist_current_in = self._dist(a=self.current_in, b=[row, col])
+            dist_current_out = self._dist(a=self.current_out, b=[row, col])
+            dist_vmeter_low = self._dist(a=self.vmeter_low, b=[row, col])
+            dist_vmeter_high = self._dist(a=self.vmeter_high, b=[row, col])
+            dist = min(dist_current_in, dist_current_out, dist_vmeter_low, dist_vmeter_high)
 
+            conductivity = self.calculate_conductivity(row, col, gate_v)
+            # Metalize the contacts
+            if dist <= (self.size / 50) + 1:
+                conductivity = self.metal_conductivity
+
+            # print(i, 'Row: ', row, 'Col: ', col, 'G: ', conductivity)
             # Left of current element
             if col > 1:  # First column has no element to the left
                 x = i - 1
@@ -55,7 +69,7 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         Fill up the sparse NxN matrix
         """
         diagonals = [[], [], [], [], []]
-    
+
         rows = self.size
         for i in range(1, self.size**2 + 1):
             element = 0
@@ -96,7 +110,8 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
 
         # for i in range(0, 5):
         #     print('Len diagonal {}: {}'.format(i, len(diagonals[i])))
-        c_matrix = sp.sparse.diags(diagonals, [self.size*-1, -1, 0, 1, self.size], format='csc')
+        c_matrix = sp.sparse.diags(
+            diagonals, [self.size*-1, -1, 0, 1, self.size], format='csc')
         return c_matrix
 
     def calculate_voltage_distribution(self, gate_v=0, conductivities=None):
@@ -109,34 +124,42 @@ class ResistorNetworkCalculator(ResistorNetworkCalculatorBase):
         # unless a conductivity map has been manually provided
         if conductivities is None:
             conductivities = self.create_conductivities_from_image(gate_v=gate_v)
-        print('Create conductivities: ', time.time() - t)
+        if self.debug:
+            print('Create conductivities: {:.2f}s'.format(time.time() - t))
 
-        # In this example current is sourced in upper left corner and
-        # drained in lower right corner
         I = np.zeros(shape=(self.size**2, 1), dtype=self.dtype)
-        I[0] = 0.01
-        I[-1] = -0.01
+        in_index = self.size * (self.current_in[0] - 1) + self.current_in[1] - 1
+        out_index = self.size * (self.current_out[0] - 1) + self.current_out[1] - 1
+        I[in_index] = 0.001
+        I[out_index] = -0.001
 
         t = time.time()
         c_matrix = self.calculate_elements(conductivities)
-        print('Calculate elements: ', time.time() - t)
+        if self.debug:
+            print('Calculate elements: {:.2f}s'.format(time.time() - t))
 
         # Peter's slides mentions finding the inverse and multiply, but
         # this is nummericly more efficient:
         t = time.time()
         v = sp.sparse.linalg.spsolve(c_matrix, I)
+        if self.debug:
+            print('spsolve: {:.2f}s'.format(time.time() - t))
         # Direct implementation from slides for comparison
-        # c_inv = np.linalg.inv(c_matrix)
-        # v = np.matmul(c_inv, I)
-        print('spsolve: {:.2f}s'.format(time.time() - t))
+        # t = time.time()
+        # c_inv = sp.sparse.linalg.inv(c_matrix)
+        # v = c_inv @ I
+        # print('Inverte and multiply: {:.2f}s'.format(time.time() - t))
 
         # Re-shape the [N**2x1] vector in to a [NxN] matrix
         self.v_dist = v.reshape(self.size, self.size)
 
+        # TODO! This is not always needed - refactor this into separate function!!!
         # Calculate an approximate g-matrix for graphing tools to work
         t = time.time()
         self.g_matrix = self.create_g_matrix(conductivities)
-        print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
+        if self.debug:
+            print('Calculate g_matrix: {:.2f}s'.format(time.time() - t))
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
@@ -148,22 +171,17 @@ if __name__ == '__main__':
     # conductivities = example_matrix.fixed_conductivity_table()
 
     # Here size can be chosen more freely
-    size = 5
+    size = 7
     conductivities = example_matrix.create_conductivities(size)
 
-    RNC = ResistorNetworkCalculator(size=size)
+    RNC = ResistorNetworkCalculator(
+        size=size,
+        current_electrodes=[(1,1), (7,7)],
+        vmeter_electrodes=[(1,1), (7,7)]
+    )
     RNC.create_g_matrix(conductivities)
 
     print(conductivities)
-
-    print()
-
-    print(RNC.g_matrix)
-
-    exit()
-
-    # RNC.load_doping_map('doping.png')
-    # RNC.load_material_maps('conductor.png')
 
     RNC.calculate_voltage_distribution(conductivities=conductivities)
 
