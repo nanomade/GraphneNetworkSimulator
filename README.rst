@@ -154,14 +154,14 @@ Examples
 
 The two configurations from Figure 19 in the notes can be obtained by the following two commands::
 
- python main.py --gate_v=0 --current_in=125,10 --current_out=125,240 --vmeter_low=5,50 --vmeter_high=5,200 250
- python main.py --gate_v=0 --current_in=245,5 --current_out=245,245 --vmeter_low=5,50 --vmeter_high=5,200 250
+ python main.py --gate_v=0 --current_in=50,2 --current_out=50,98 --vmeter_low=2,20 --vmeter_high=2,80 250
+ python main.py --gate_v=0 --current_in=99,2 --current_out=99,98 --vmeter_low=2,20 --vmeter_high=2,80 250
 
 A gate sweep of the same configuration can be done like this::
   
- python main.py --gate_v=-5,5,0.1 --current_in=125,10 --current_out=125,240 --vmeter_low=5,50 --vmeter_high=5,200 250
+ python main.py --gate_v=-3,8,0.2 --current_in=50,2 --current_out=50,98 --vmeter_low=2,20 --vmeter_high=2,80 250
 
-As a reference of performance, this command has an execution time of apprixmately 2.5 minutes on the author's computer.
+As a reference of performance, this command has an execution time of apprixmately 50s on the author's computer.
  
 Overview of included files
 ==========================

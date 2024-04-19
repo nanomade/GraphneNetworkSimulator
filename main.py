@@ -1,7 +1,9 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors
+
+# from matplotlib import colors
+from matplotlib.widgets import Slider
 
 from resistor_network_calculator import ResistorNetworkCalculator
 
@@ -39,6 +41,8 @@ class RNVisualizer:
         gate, voltages = self.rnc.gate_sweep(gate_low, gate_high, stepsize)
         fig = plt.figure()  # Figsize...
         ax = fig.add_subplot(1, 1, 1)
+        ax.set_ylabel('Prope-to-prope Voltage', fontsize=16)
+        ax.set_xlabel('Gate Voltage', fontsize=16)
         ax.plot(gate, voltages)
         plt.show()
 
@@ -58,18 +62,18 @@ class RNVisualizer:
         # TODO: Show only these if input is from an image
         if self.rnc.doping_map is not None:
             ax = fig.add_subplot(2, 3, 1)
-            ax.text(0.05, 1.10, "Doping", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Input Doping", transform=ax.transAxes, **params)
             # plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
             plt.imshow(self.rnc.doping_map)
 
         if self.rnc.metal_map is not None:
             ax = fig.add_subplot(2, 3, 2)
-            ax.text(0.05, 1.10, "Metal", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Input Metal", transform=ax.transAxes, **params)
             plt.imshow(self.rnc.metal_map)
 
         if self.rnc.graphene_map is not None:
             ax = fig.add_subplot(2, 3, 3)
-            ax.text(0.05, 1.10, "Graphene", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Input Graphene", transform=ax.transAxes, **params)
             plt.imshow(self.rnc.graphene_map)
 
         # Conductivity
@@ -78,17 +82,37 @@ class RNVisualizer:
         plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
 
         # Current Density
+        current_density = self.rnc.calculate_current_density() * 1e6
         ax = fig.add_subplot(2, 3, 5)
         ax.text(
-            0.05, 1.10, "Current Density (log scale)", transform=ax.transAxes, **params
+            0.05, 1.10, "Current Density / μA", transform=ax.transAxes, **params
         )
-        current_density = self.rnc.calculate_current_density()
-        plt.imshow(current_density, norm=colors.LogNorm())
-        # plt.imshow(current_density)
+
+        # The value where 3% of all values are larger, and 97% are smaller
+        max_z = int(self.size*0.97)
+        # O(n) numpy-trick found on Stack Overflow:
+        vmax = np.partition(current_density.flatten(), max_z * -1)[max_z * -1]
+
+        # plt.imshow(current_density, norm=colors.LogNorm())
+        cd_plot = plt.imshow(current_density, vmin=0, vmax=vmax)
+        plt.colorbar()
+
+        ax_slider = fig.add_axes([0.4, 0.05, 0.5, 0.05])
+        max_z_slider = Slider(
+            ax=ax_slider,
+            label='MaxZ',
+            valmin=0,
+            valmax=current_density.max(),
+            valinit=vmax,
+        )
+
+        def update(val):
+            cd_plot.set_clim(vmax=max_z_slider.val)
+        max_z_slider.on_changed(update)
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
-        ax.text(0.05, 1.10, "Potential", transform=ax.transAxes, **params)
+        ax.text(0.05, 1.10, "Potential / V", transform=ax.transAxes, **params)
         # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
         plt.colorbar()
@@ -128,6 +152,13 @@ def parse_args():
             gate_v = (float(args[0]), float(args[1]), float(args[2]))
         return gate_v
 
+    def to_relative(coordinate, size):
+        relative_coord = (
+            int(coordinate[0] * size / 100),
+            int(coordinate[1] * size / 100)
+        )
+        return relative_coord
+
     msg = 'Use size values higher then 1000 with caution.'
     parser = argparse.ArgumentParser(prog="main.py", description=msg)
     parser.add_argument("size", type=int, nargs=1, help="The size of the network")
@@ -145,8 +176,6 @@ def parse_args():
 
     parser.add_argument("--print-extra-output", action="store_true")
     parser.add_argument("--hard-code-network", action="store_true")
-
-
     args = vars(parser.parse_args())
 
     size = args['size'][0]
@@ -154,18 +183,19 @@ def parse_args():
 
     current_in = (1, 1)
     if args['current_in'] is not None:
-        current_in = args['current_in'][0]
+        current_in = to_relative(args['current_in'][0], size)
     current_out = (size, size)
     if args['current_out'] is not None:
-        current_out = args['current_out'][0]
+        current_out = to_relative(args['current_out'][0], size)
     current_electrodes = (current_in, current_out)
 
     vmeter_low = (1, 1)
     if args['vmeter_low'] is not None:
-        vmeter_low = args['vmeter_low'][0]
+        vmeter_low = to_relative(args['vmeter_low'][0], size)
+
     vmeter_high = (size, size)
     if args['vmeter_high'] is not None:
-        vmeter_high = args['vmeter_high'][0]
+        vmeter_high = to_relative(args['vmeter_high'][0], size)
     vmeter_electrodes = (vmeter_low, vmeter_high)
 
     if args['hard_code_network']:
