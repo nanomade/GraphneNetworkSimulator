@@ -39,6 +39,8 @@ class RNVisualizer:
         gate, voltages = self.rnc.gate_sweep(gate_low, gate_high, stepsize)
         fig = plt.figure()  # Figsize...
         ax = fig.add_subplot(1, 1, 1)
+        ax.set_ylabel('Prope-to-prope Voltage', fontsize=16)
+        ax.set_xlabel('Gate Voltage', fontsize=16)
         ax.plot(gate, voltages)
         plt.show()
 
@@ -84,8 +86,12 @@ class RNVisualizer:
         )
         current_density = self.rnc.calculate_current_density() * 1e6
         # plt.imshow(current_density, norm=colors.LogNorm())
-        plt.imshow(current_density)
-        # plt.imshow(current_density, vmin=0, vmax=1)
+        # plt.imshow(current_density)
+
+        # The value where 4% are larger, and 96% are smaller
+        max_z = int(self.size*0.96)
+        vmax = np.partition(current_density.flatten(), max_z * -1)[max_z * -1]
+        plt.imshow(current_density, vmin=0, vmax=vmax)
         plt.colorbar()
 
         # Potential
@@ -130,6 +136,13 @@ def parse_args():
             gate_v = (float(args[0]), float(args[1]), float(args[2]))
         return gate_v
 
+    def to_relative(coordinate, size):
+        relative_coord = (
+            int(coordinate[0] * size / 100),
+            int(coordinate[1] * size / 100)
+        )
+        return relative_coord
+
     msg = 'Use size values higher then 1000 with caution.'
     parser = argparse.ArgumentParser(prog="main.py", description=msg)
     parser.add_argument("size", type=int, nargs=1, help="The size of the network")
@@ -147,8 +160,6 @@ def parse_args():
 
     parser.add_argument("--print-extra-output", action="store_true")
     parser.add_argument("--hard-code-network", action="store_true")
-
-
     args = vars(parser.parse_args())
 
     size = args['size'][0]
@@ -156,18 +167,19 @@ def parse_args():
 
     current_in = (1, 1)
     if args['current_in'] is not None:
-        current_in = args['current_in'][0]
+        current_in = to_relative(args['current_in'][0], size)
     current_out = (size, size)
     if args['current_out'] is not None:
-        current_out = args['current_out'][0]
+        current_out = to_relative(args['current_out'][0], size)
     current_electrodes = (current_in, current_out)
 
     vmeter_low = (1, 1)
     if args['vmeter_low'] is not None:
-        vmeter_low = args['vmeter_low'][0]
+        vmeter_low = to_relative(args['vmeter_low'][0], size)
+
     vmeter_high = (size, size)
     if args['vmeter_high'] is not None:
-        vmeter_high = args['vmeter_high'][0]
+        vmeter_high = to_relative(args['vmeter_high'][0], size)
     vmeter_electrodes = (vmeter_low, vmeter_high)
 
     if args['hard_code_network']:
