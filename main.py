@@ -58,18 +58,18 @@ class RNVisualizer:
         # TODO: Show only these if input is from an image
         if self.rnc.doping_map is not None:
             ax = fig.add_subplot(2, 3, 1)
-            ax.text(0.05, 1.10, "Doping", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Input Doping", transform=ax.transAxes, **params)
             # plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
             plt.imshow(self.rnc.doping_map)
 
         if self.rnc.metal_map is not None:
             ax = fig.add_subplot(2, 3, 2)
-            ax.text(0.05, 1.10, "Metal", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Input Metal", transform=ax.transAxes, **params)
             plt.imshow(self.rnc.metal_map)
 
         if self.rnc.graphene_map is not None:
             ax = fig.add_subplot(2, 3, 3)
-            ax.text(0.05, 1.10, "Graphene", transform=ax.transAxes, **params)
+            ax.text(0.05, 1.10, "Input Graphene", transform=ax.transAxes, **params)
             plt.imshow(self.rnc.graphene_map)
 
         # Conductivity
@@ -80,15 +80,17 @@ class RNVisualizer:
         # Current Density
         ax = fig.add_subplot(2, 3, 5)
         ax.text(
-            0.05, 1.10, "Current Density (log scale)", transform=ax.transAxes, **params
+            0.05, 1.10, "Current Density / μA", transform=ax.transAxes, **params
         )
-        current_density = self.rnc.calculate_current_density()
-        plt.imshow(current_density, norm=colors.LogNorm())
-        # plt.imshow(current_density)
+        current_density = self.rnc.calculate_current_density() * 1e6
+        # plt.imshow(current_density, norm=colors.LogNorm())
+        plt.imshow(current_density)
+        # plt.imshow(current_density, vmin=0, vmax=1)
+        plt.colorbar()
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
-        ax.text(0.05, 1.10, "Potential", transform=ax.transAxes, **params)
+        ax.text(0.05, 1.10, "Potential / V", transform=ax.transAxes, **params)
         # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
         plt.colorbar()
