@@ -18,7 +18,7 @@ class ResistorNetworkCalculatorBase:
         self.vmeter_high = vmeter_electrodes[1]
 
         self.metal_conductivity = 1e-2
-        self.minimal_conductivity = 1e-5
+        self.minimal_conductivity = 1e-10
 
         self.g_matrix = None
         self.graphene_map = None
@@ -151,7 +151,7 @@ class ResistorNetworkCalculatorBase:
             print('Voltage map has not been calculated')
             return
         grad = np.gradient(self.v_dist)
-        mag = np.sqrt(grad[0] ** 2 + grad[1] ** 2)
+        mag = 2 * np.sqrt(grad[0] ** 2 + grad[1] ** 2) / self.size
         current_density = mag * self.g_matrix.reshape(self.size, self.size)
         return current_density
 
