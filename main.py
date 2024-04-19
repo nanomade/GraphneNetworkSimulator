@@ -1,7 +1,9 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors
+
+# from matplotlib import colors
+from matplotlib.widgets import Slider
 
 from resistor_network_calculator import ResistorNetworkCalculator
 
@@ -80,19 +82,33 @@ class RNVisualizer:
         plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
 
         # Current Density
+        current_density = self.rnc.calculate_current_density() * 1e6
         ax = fig.add_subplot(2, 3, 5)
         ax.text(
             0.05, 1.10, "Current Density / μA", transform=ax.transAxes, **params
         )
-        current_density = self.rnc.calculate_current_density() * 1e6
-        # plt.imshow(current_density, norm=colors.LogNorm())
-        # plt.imshow(current_density)
 
-        # The value where 4% are larger, and 96% are smaller
-        max_z = int(self.size*0.96)
+        # The value where 3% of all values are larger, and 97% are smaller
+        max_z = int(self.size*0.97)
+        # O(n) numpy-trick found on Stack Overflow:
         vmax = np.partition(current_density.flatten(), max_z * -1)[max_z * -1]
-        plt.imshow(current_density, vmin=0, vmax=vmax)
+
+        # plt.imshow(current_density, norm=colors.LogNorm())
+        cd_plot = plt.imshow(current_density, vmin=0, vmax=vmax)
         plt.colorbar()
+
+        ax_slider = fig.add_axes([0.4, 0.05, 0.5, 0.05])
+        max_z_slider = Slider(
+            ax=ax_slider,
+            label='MaxZ',
+            valmin=0,
+            valmax=current_density.max(),
+            valinit=vmax,
+        )
+
+        def update(val):
+            cd_plot.set_clim(vmax=max_z_slider.val)
+        max_z_slider.on_changed(update)
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
