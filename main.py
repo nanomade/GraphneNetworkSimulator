@@ -41,9 +41,9 @@ class RNVisualizer:
         gate, voltages = self.rnc.gate_sweep(gate_low, gate_high, stepsize)
         fig = plt.figure()  # Figsize...
         ax = fig.add_subplot(1, 1, 1)
-        ax.set_ylabel('Prope-to-prope Voltage', fontsize=16)
-        ax.set_xlabel('Gate Voltage', fontsize=16)
-        ax.plot(gate, voltages)
+        ax.set_ylabel('Conductance (S)', fontsize=16)
+        ax.set_xlabel('Gate Voltage (V)', fontsize=16)
+        ax.plot(gate, 1e-3 / voltages)  # Current - remember to update
         plt.show()
 
     def color_map(self):
@@ -78,7 +78,7 @@ class RNVisualizer:
 
         # Conductivity
         ax = fig.add_subplot(2, 3, 4)
-        ax.text(0.05, 1.10, "Conductivity", transform=ax.transAxes, **params)
+        ax.text(0.05, 1.10, "Conductivity (S)", transform=ax.transAxes, **params)
         plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
 
         # Current Density
