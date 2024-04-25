@@ -88,27 +88,36 @@ class RNVisualizer:
             0.05, 1.10, "Current Density / μA", transform=ax.transAxes, **params
         )
 
-        # The value where 3% of all values are larger, and 97% are smaller
-        max_z = int(self.size*0.97)
-        # O(n) numpy-trick found on Stack Overflow:
-        vmax = np.partition(current_density.flatten(), max_z * -1)[max_z * -1]
+        # # The value where 5% of all values are larger, and 95% are smaller
+        # g_init_index = int((self.size**2)*0.95)
+        # # O(n) numpy-trick found on Stack Overflow:
+        # g_init = np.partition(current_density.flatten(), g_init_index * -1)[g_init_index * -1]
+        cd = current_density.flatten()
+        cd.sort()
+        g_init = cd[int(self.size**2 * 0.95)]
+        g_max = cd[int(self.size**2 * 0.99)]
 
-        # plt.imshow(current_density, norm=colors.LogNorm())
-        cd_plot = plt.imshow(current_density, vmin=0, vmax=vmax)
+        # cd_plot = plt.imshow(current_density, norm=colors.LogNorm())
+        cd_plot = plt.imshow(current_density, vmin=0, vmax=g_init)
         plt.colorbar()
 
-        ax_slider = fig.add_axes([0.4, 0.05, 0.5, 0.05])
+        ax_slider = fig.add_axes([0.1, 0.05, 0.85, 0.05])
         max_z_slider = Slider(
             ax=ax_slider,
             label='MaxZ',
             valmin=0,
-            valmax=current_density.max(),
-            valinit=vmax,
+            # valmax=current_density.max(),
+            valmax=g_max,
+            valinit=g_init,
         )
-
         def update(val):
             cd_plot.set_clim(vmax=max_z_slider.val)
         max_z_slider.on_changed(update)
+
+        def format_coord(x, y):
+            msg = str(current_density[int(y), int(x)])
+            return msg
+        ax.format_coord = format_coord
 
         # Potential
         ax = fig.add_subplot(2, 3, 6)
@@ -116,7 +125,6 @@ class RNVisualizer:
         # plt.imshow(self.rnc.v_dist, norm=colors.LogNorm())
         plt.imshow(self.rnc.v_dist)
         plt.colorbar()
-
         plt.show()
 
     def plot_surface(self):
