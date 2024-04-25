@@ -81,7 +81,7 @@ As explained in the course notes, the simulation involves solving an equation of
 GxV = I, with V and I both being of the size of the area of the network, ie the square of
 the `size` parameter given to the program.
 
-The size of G is the square of this value, ie `size`:sup:`4`. This means that the time and
+The size of G is the square of this value, ie `size``4`:sup:. This means that the time and
 memory requirement of the calculation could be expected to have a runtime complexety
 of O(`size`:sup:`4`). However, scince the intermediate matrix has only 5 non-zero entries pr
 row, the total amount of non-zero elements is (almost) exactly 5 * `size`:sup:`2`, which does
