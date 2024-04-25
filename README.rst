@@ -124,11 +124,14 @@ be no gate dependence. This feature is usefull if you want to compare an exactly
 grid to the approximation usually used when loading conductivities from images files.
 
 Parameters `current_in`, `current_out`, `vmeter_low` and `vmeter_high` positions the four
-electrodes. A small patch of metal will be programmatically added around each probe
-independant of the conductivities loaded from the images. Syntax for the four parameters
-are all of the form `--parameter=y,x`. If an argument is missing, it will default to either
-the upper left corner (`current_in` and `vmeter_low`) or the lower right corner (`current_out`
-and `vmeter_high`).
+electrodes in units of percent of the total size. A small patch of metal will be
+programmatically added around each probe independant of the conductivities loaded from the
+images.
+Syntax for the four parameters are all of the form `--parameter=y,x`. Eg. --current_out=50,98
+will position the current drain electrode in the vertical center almost at the right edge.
+
+If an argument is missing, it will default to either the upper left corner (`current_in` and
+`vmeter_low`) or the lower right corner (`current_out` and `vmeter_high`).
 
 The simulated current is always 1mA, but since everything in the model is linear in current,
 the result can be freely scaled to whatever current is wanted.
