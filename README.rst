@@ -83,9 +83,9 @@ the `size` parameter given to the program.
 
 The size of G is the square of this value, ie `size``4`:sup:. This means that the time and
 memory requirement of the calculation could be expected to have a runtime complexety
-of O(`size`:sup:`4`). However, scince the intermediate matrix has only 5 non-zero entries pr
-row, the total amount of non-zero elements is (almost) exactly 5 * `size`:sup:`2`, which does
-not scale as as O(`size`:sup:`4`). Nummerically this can be exploited by using the concept
+of O(`size``4`:sup:). However, scince the intermediate matrix has only 5 non-zero entries pr
+row, the total amount of non-zero elements is (almost) exactly 5 * `size``2`:sup:, which does
+not scale as as O(`size``4`:sup:). Nummerically this can be exploited by using the concept
 of sparse matrices - a matrix implementation that does not involve full sized arrays, but
 rather a data structure that contains only the non-zero elements. Optimizing this type of
 calculations is in itself an active field of research, and in Python two of the currently
