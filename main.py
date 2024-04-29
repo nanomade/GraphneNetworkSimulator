@@ -81,6 +81,13 @@ class RNVisualizer:
         ax.text(0.05, 1.10, "Conductivity (S)", transform=ax.transAxes, **params)
         plt.imshow(self.rnc.g_matrix.reshape(self.size, self.size))
 
+        g = self.rnc.g_matrix.reshape(self.size, self.size)
+        def format_coord(x, y):
+            msg = str(g[int(y), int(x)])
+            return msg
+        ax.format_coord = format_coord
+
+        
         # Current Density
         current_density = self.rnc.calculate_current_density() * 1e6
         ax = fig.add_subplot(2, 3, 5)
