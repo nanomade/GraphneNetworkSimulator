@@ -17,7 +17,7 @@ class ResistorNetworkCalculatorBase:
         self.vmeter_low = vmeter_electrodes[0]
         self.vmeter_high = vmeter_electrodes[1]
 
-        self.metal_conductivity = 1e-2
+        self.metal_conductivity = 1
         self.minimal_conductivity = 1e-10
 
         self.g_matrix = None
@@ -70,14 +70,11 @@ class ResistorNetworkCalculatorBase:
 
     def _calculate_graphene_conductivity(self, row, col, gate_v):
         e = 1.60217663e-19  # Coloumb
-        epsilon_0 = 8.8541878128e-12  # F/m
-        n_0 = 1e13  # Found on google... - Unit: m^-2
+        n_0 = 0.6e16
+        mu = 0.2  # Parameter, Unit: m**2/(v * s)
+        C = 0.002  # F/m**2
 
-        d = 1e-7  # Parameter, but 100nm is not a bad start - Unit: m
-        epsilon_r = 4  # Parameter, but 4 is not a bad start - no unit
-        mu = 1  # Parameter, but 1 is not a bad start, Unit: m**2/(v * s)
-
-        n_vg = gate_v * epsilon_0 * epsilon_r / (d * e)
+        n_vg = gate_v * C / e
         n_doping = self.doping_map[row - 1][col - 1]
         n_exp = n_vg + n_doping
 

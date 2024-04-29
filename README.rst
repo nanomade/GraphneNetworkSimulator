@@ -81,11 +81,11 @@ As explained in the course notes, the simulation involves solving an equation of
 GxV = I, with V and I both being of the size of the area of the network, ie the square of
 the `size` parameter given to the program.
 
-The size of G is the square of this value, ie `size`:sup:`4`. This means that the time and
+The size of G is the square of this value, ie `size``4`:sup:. This means that the time and
 memory requirement of the calculation could be expected to have a runtime complexety
-of O(`size`:sup:`4`). However, scince the intermediate matrix has only 5 non-zero entries pr
-row, the total amount of non-zero elements is (almost) exactly 5 * `size`:sup:`2`, which does
-not scale as as O(`size`:sup:`4`). Nummerically this can be exploited by using the concept
+of O(`size``4`:sup:). However, scince the intermediate matrix has only 5 non-zero entries pr
+row, the total amount of non-zero elements is (almost) exactly 5 * `size``2`:sup:, which does
+not scale as as O(`size``4`:sup:). Nummerically this can be exploited by using the concept
 of sparse matrices - a matrix implementation that does not involve full sized arrays, but
 rather a data structure that contains only the non-zero elements. Optimizing this type of
 calculations is in itself an active field of research, and in Python two of the currently
@@ -124,11 +124,14 @@ be no gate dependence. This feature is usefull if you want to compare an exactly
 grid to the approximation usually used when loading conductivities from images files.
 
 Parameters `current_in`, `current_out`, `vmeter_low` and `vmeter_high` positions the four
-electrodes. A small patch of metal will be programmatically added around each probe
-independant of the conductivities loaded from the images. Syntax for the four parameters
-are all of the form `--parameter=y,x`. If an argument is missing, it will default to either
-the upper left corner (`current_in` and `vmeter_low`) or the lower right corner (`current_out`
-and `vmeter_high`).
+electrodes in units of percent of the total size. A small patch of metal will be
+programmatically added around each probe independant of the conductivities loaded from the
+images.
+Syntax for the four parameters are all of the form `--parameter=y,x`. Eg. --current_out=50,98
+will position the current drain electrode in the vertical center almost at the right edge.
+
+If an argument is missing, it will default to either the upper left corner (`current_in` and
+`vmeter_low`) or the lower right corner (`current_out` and `vmeter_high`).
 
 The simulated current is always 1mA, but since everything in the model is linear in current,
 the result can be freely scaled to whatever current is wanted.
